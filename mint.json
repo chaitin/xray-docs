@@ -208,5 +208,10 @@
   "footerSocials": {
     "github": "https://github.com/chaitin/xray",
     "website": "https://stack.chaitin.com/poc/list"
+  },
+  "analytics": {
+    "ga4": {
+      "measurementId": "G-TKTG5WLH30"
+    }
   }
 }
