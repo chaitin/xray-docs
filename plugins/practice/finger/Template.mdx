@@ -2,4 +2,26 @@
 title: '编写模板'
 ---
 
-todo
+```
+name: test
+transport: http
+
+detail:
+  cpe: test:test
+  version: '{{version}}'
+  
+rules:
+
+  kw_in_body:
+    request:
+      cache: true
+      follow_redirects: true
+      method: GET
+      path: /
+    expression: |-
+      response.body_string.contains("keyword1")
+      && response.body_string.contains("keyword2")
+
+expression: kw_in_body()
+
+```
