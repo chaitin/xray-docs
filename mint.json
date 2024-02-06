@@ -1,0 +1,212 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "xray Documentation",
+  "primaryTab": {
+    "name": "介绍"
+  },
+  "logo": {
+    "dark": "/logo/dark.png",
+    "light": "/logo/light.png"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#0D9373",
+    "light": "#07C983",
+    "dark": "#0D9373",
+    "anchors": {
+      "from": "#0D9373",
+      "to": "#07C983"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "规则实验室",
+      "url": "https://poc.xray.cool"
+    }
+  ],
+  "topbarCtaButton": {
+    "type": "github",
+    "url": "https://github.com/chaitin/xray"
+  },
+  "tabs": [
+    {
+      "name": "工具",
+      "url": "tools"
+    },
+    {
+      "name": "插件编写指南",
+      "url": "plugins"
+    },
+    {
+      "name": "激励计划",
+      "url": "excitation"
+    },
+    {
+      "name": "帮助",
+      "url": "help"
+    }
+  ],
+  "feedback": {
+    "thumbsRating": true,
+    "suggestEdit": true,
+    "raiseIssue": true
+  },
+  "anchors": [
+    {
+      "name": "官网",
+      "icon": "newspaper",
+      "url": "https://xray.cool/"
+    },
+    {
+      "name": "文档",
+      "icon": "book-open-cover",
+      "url": "https://docs.xray.cool"
+    },
+    {
+      "name": "社区",
+      "icon": "slack",
+      "url": "https://stack.chaitin.com/tool/detail/1"
+    }
+
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": [
+        "Introduction",
+        "Usage"
+      ]
+    },
+    {
+      "group": "工具",
+      "pages": [
+        "tools/xray/QuickStart",
+        {
+          "group": "xray",
+          "icon": "starfighter-twin-ion-engine-advanced",
+          "iconType": "regular",
+          "pages": [
+            "tools/xray/BasicIntroduction",
+            "tools/xray/QuickStart",
+            "tools/xray/Scanning",
+            "tools/xray/Configuration",
+            {
+              "group": "高级用法",
+              "pages": [
+                "tools/xray/advanced/reverse",
+                "tools/xray/advanced/ssrf",
+                "tools/xray/advanced/burp",
+                "tools/xray/advanced/awvs",
+                "tools/xray/advanced/webhook"
+              ]
+            },
+            "tools/xray/QA",
+            "tools/xray/VersionComparison",
+            "tools/xray/Feedback"
+          ]
+        },
+        {
+          "group": "xpoc",
+          "icon": "raygun",
+          "iconType": "duotone",
+          "pages": [
+            "tools/xpoc/BasicIntroduction",
+            "tools/xpoc/QuickStart",
+            "tools/xpoc/BasicFunction"
+          ]
+        },
+        {
+          "group": "rad",
+          "icon": "radiation",
+          "iconType": "duotone",
+          "pages": ["tools/rad/Tutorials"]
+        }
+      ]
+    },
+    {
+      "group": "插件介绍",
+      "pages": [
+        "plugins/Usage",
+        "plugins/Index",
+        "plugins/QuickStart",
+        "plugins/Environment"
+      ]
+    },
+    {
+      "group": "YAML",
+      "pages": [
+        "plugins/yaml/Format",
+        "plugins/yaml/YAMLScriptV2",
+        {
+          "group": "高级用法",
+          "pages": [
+            "plugins/yaml/advanced/Set",
+            "plugins/yaml/advanced/Payloads",
+            "plugins/yaml/advanced/Rules",
+            "plugins/yaml/advanced/Details",
+            "plugins/yaml/advanced/Escape"
+          ]
+        },
+        "plugins/yaml/YAMLTypeFunc",
+        "plugins/yaml/Fix"
+      ]
+    },
+    {
+      "group": "GO",
+      "pages": [
+        "plugins/go/Index"
+      ]
+    },
+    {
+      "group": "最佳实践",
+      "pages": [
+        {
+          "group": "POC",
+          "pages": [
+            "plugins/practice/poc/Template",
+            "plugins/practice/poc/Example",
+            {
+              "group": "高质量规范",
+              "pages": [
+                "plugins/practice/poc/HighQuality",
+                "plugins/practice/poc/Unauth",
+                "plugins/practice/poc/PathTraversal",
+                "plugins/practice/poc/RemoteCommandExecution",
+                "plugins/practice/poc/RemoteCodeExecution",
+                "plugins/practice/poc/FileUpload",
+                "plugins/practice/poc/SQLInjection",
+                "plugins/practice/poc/SSRF",
+                "plugins/practice/poc/Redirect",
+                "plugins/practice/poc/XSS",
+                "plugins/practice/poc/Question"
+              ]
+            }
+          ]
+        },
+        {
+          "group": "Fingerprint",
+          "pages": [
+            "plugins/practice/finger/Template"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "Excitation",
+      "pages": [
+        "excitation/reward",
+        "excitation/contribute"
+      ]
+    },
+    {
+      "group": "Help",
+      "pages": [
+        "help/index"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/chaitin/xray",
+    "website": "https://stack.chaitin.com/poc/list"
+  }
+}

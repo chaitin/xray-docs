@@ -1,0 +1,580 @@
+---
+title: 配置文件
+description: 'xray config.yaml 介绍'
+---
+
+## 概述（Summarize）
+
+引擎初次运行时，会在当前目录内生成一个 `config.yaml` 文件，该文件中的配置项可以直接左右引擎在运行时的状态。通过调整配置中的各种参数，可以满足不同场景下的需求。
+在修改某项配置时，请务必理解该项的含义后再修改，否则可能会导致非预期的情况。
+
+## 并发（Concurrent）
+
+xray 基于 Go 编写，在 Go 语言中用户层级里没有线程的概念，但拥有一个比线程更加
+强劲，更加好用的并发模型 —— Goroutine。这里的并发也基本指代的是同时在进行漏洞扫描的 Goroutine 的数量。
+
+看起来有些拗口，我们可以用更简单的方式来理解这个概念。假设一个请求在整个扫描流程中需要被 100 个插件扫描且每个插件的执行时间为1秒钟，
+倘若我们设置了并发为 50，那么只需要 2s 就能执行完所有的插件；如果设置并发为 20，那么就需要 5s 才能执行完所有插件。实际上，xray 在插件执行层面就是我们在操作系统中学习到的“生产者消费者模型”。
+
+在配置文件中可以用下面的配置改变漏洞探测的 worker 数量:
+
+```
+parallel: 30                      # 漏洞探测的 worker 数量，可以简单理解为同时有 30 个 POC 在运行
+```
+
+指的一提的是，这个值并非越大越好，因为高并发的情况下多个 worker 之间会互相竞争资源，形成所谓的内卷，最终八面俱伤，不仅没有扫到漏洞
+还可能把目标机器扫挂。至于设置多少，这个需要综合考量运行 xray 的机器的性能、当前机器与目标机器之间带宽的大小以及目标机器的性能，xray 默认的 30 是一个相对保守的数值，
+但大多数情况都足够了。
+
+## HTTP
+
+对于 web 扫描来说，http 协议的交互是整个过程检测过程的核心。因此这里的配置将影响到引擎进行 http 发包时的行为。
+
+```yaml
+http:
+  proxy: ""                             # 漏洞扫描时使用的代理，如: http://127.0.0.1:8080。 如需设置多个代理，请使用 proxy_rule 或自行创建上层代理
+  proxy_rule: []                        # 漏洞扫描使用多个代理的配置规则, 具体请参照文档
+  dial_timeout: 5                       # 建立 tcp 连接的超时时间
+  read_timeout: 10                      # 读取 http 响应的超时时间，不可太小，否则会影响到 sql 时间盲注的判断
+  max_conns_per_host: 50                # 同一 host 最大允许的连接数，可以根据目标主机性能适当增大
+  enable_http2: false                   # 是否启用 http2, 开启可以提升部分网站的速度，但目前不稳定有崩溃的风险
+  fail_retries: 0                       # 请求失败的重试次数，0 则不重试
+  max_redirect: 5                       # 单个请求最大允许的跳转数
+  max_resp_body_size: 2097152           # 最大允许的响应大小, 默认 2M
+  max_qps: 500                          # 每秒最大请求数
+  allow_methods:                        # 允许的请求方法
+  - HEAD
+  - GET
+  - POST
+  - PUT
+  - PATCH
+  - DELETE
+  - OPTIONS
+  - CONNECT
+  - TRACE
+  - MOVE
+  - PROPFIND
+  headers:
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0
+    # Cookie: key=value
+```
+
+<AccordionGroup>
+    <Accordion title="漏洞扫描用的代理：proxy">
+        配置该项后漏洞扫描发送请求时将使用代理发送，支持 `http`, `https` 和 `socks5` 三种格式，如:
+
+        ```
+        http://127.0.0.1:1111
+        https://127.0.0.1:1111
+        socks5://127.0.0.1:1080
+        ```
+
+        如果代理需要认证，可以使用下面的格式 `http://user:password@127.0.0.1:1111`
+
+    </Accordion>
+
+    <Accordion title="多代理配置">
+        在漏洞扫描的时候，可能想不同的域名使用不同的代理，设置多个代理切换等，可以通过 `proxy_rule` 字段来配置。需要注意的是，`proxy` 配置将优先于本配置。
+
+        ```
+        proxy_rule:
+        - match: "*host1"
+        servers:
+        - addr: "http://127.0.0.1:8001"
+        weight: 1
+        - addr: "http://127.0.0.1:8002"
+        weight: 2
+        - match: "*"
+        servers:
+        - addr: "http://127.0.0.1:8003"
+        weight: 1
+        - addr: "http://127.0.0.1:8004"
+        weight: 5
+        ```
+
+        - match: 请求的 url 的主机名如果匹配，就使用本条规则。
+        - 如果是 `*`，则代表可以匹配所有。所以一定要将 `*` 放在最后面，上面没有匹配到的域名都将使用这个配置。
+        - 如果没有任何一条可以匹配，这个请求将不会使用代理。
+        - addr: 代理服务器的地址，同 `proxy` 的配置。
+        - weight: 代理服务器的权重，如果 `servers` 中配置了多个代理服务器，设置权重可以均衡负载，比如权重是 `3:7`，则代表每 10 个请求，有 3 个选择 server1，有 7 个选择 server2。要注意的是，这里是 round bin 算法，前 3 个一定发往 server1，后面 7 个一定发往 server2，然后继续循环，不是每个请求都是基于权重随机的。
+    </Accordion>
+
+    <Accordion title="限制发包速度：max_qps">
+        默认值 500， 因为最大允许每秒发送 500 个请求。一般来说这个值够快了，通常是为了避免被ban，会把该值改的小一些，极限情况支持设置为 1， 表示每秒只能发送一个请求。
+    </Accordion>
+    <Accordion title="其他配置项">
+        对照配置文件的注释好好理解下应该就能懂，如果不懂就不要改了。
+    </Accordion>
+</AccordionGroup>
+
+## 插件（Plugins）
+
+插件配置这一部分对应于配置文件的 plugins 部分。这一部分的每个配置项的 key 是插件名称，value 是与该插件相关的配置。
+每个部分的结构大致如下
+
+```yaml
+pluginName:
+    enabled: true/false
+    otherConfigrations: xxx
+```
+
+`enabled` 即为是否启用插件, 其它的配置如果有，则是当前插件的一些特殊配置。鉴于配置文件本身已经有很多注释，这里不做赘述，仅对几个比较特殊的配置展开说明下。
+
+<AccordionGroup>
+    <Accordion title="xss">
+        + `ie_feature` 如果此项为 true，则会将一些只能在 IE 环境下复现的漏洞爆出来，小白请不要开。主要包括 expression xss、hidden tag xss、utf-7 和 content type sniffing 导致的 xss （[参考链接](https://mp.weixin.qq.com/s?__biz=MzI5MzY2MzM0Mw==&mid=2247484070&idx=1&sn=673e20a08d9ae6c3de60ca48110b920a) 中的 `3. json`）。
+        + `include_cookie` 如果此项为 true, 则会检查是否存在输入源在 cookie 中的 xss
+    </Accordion>
+    <Accordion title="dirscan">
+        + `depth` 深度限制
+        + `dictionary` 配置目录字典, 需要是绝对路径, 配置后将与内置字典**合并**
+
+        `depth` 是探测深度, 默认为 1, 即只在 URL 深度为 0, 和深度为 1 时运行该插件（前提是启用了该插件)
+
+        定义 http://example.com/，深度为 0，定义 http://example.com/a/, 深度为 1。 在这种配置下，dirscan 将对
+
+        http://example.com/ 和 http://example.com/a/ 做两次扫描，如果存在 http://example.com/a/example.zip 那么就能将其扫描出来。
+    </Accordion>
+    <Accordion title="sqldet">
+        下面这个选项很危险，开启之后可以增加检测率，但是有破坏数据库数据的可能性，请务必了解工作原理之后再开启
+        + `dangerously_use_comment_in_sql` 允许检查注入的时候使用注释
+    </Accordion>
+    <Accordion title="phantasm">
+        phantasm 是 xray 的 poc 框架，在其下运行着许多 yaml 和 go 写的 poc，用户可以通过该模块编写自己的 poc 并让 xray 加载，具体见后续 [自定义POC语法](guide/poc.md)
+
+        这里我们先介绍一下它的两个重点配置:
+
+        ```yaml
+        depth: 1                            # 与 dirscan 一样，不再赘述
+        auto_load_poc: false                # 除内置 poc 外，额外自动加载当前目录以 "poc-" 为文件名前缀的POC文件，等同于在 include_poc 中增加 "./poc-*"
+        exclude_poc: []                     # 排除哪些 poc, 支持 glob 语法, 如: /home/poc/*thinkphp* 或 poc-yaml-weblogic*
+        include_poc: []                     # 只使用哪些内置 poc 以及 额外加载哪些本地 poc, 支持 glob 语法, 如："*weblogic*" 或 "/home/poc/*"
+        # 也可使用 --poc 仅运行 指定的内置或本地 poc，进行测试。
+        # 例如，可使用如下命令，仅运行当前目录下的 poc 且 不运行内置 poc 进行测试：
+        # webscan -poc ./poc-* -url http://example.com
+        poc_tags:                           # 为POC添加tag, 然后就可以使用--tags来选择启动哪些POC。poc-yaml-test为poc的name，[]中的内容为该POC对应的标签
+        poc-yaml-test: ["HW", "ST"]
+        poc-yaml-test-1: ["ST"]
+        ```
+
+        `exclude_poc` 用于去除加载哪些 poc。一个常见的 case 是如果发现某些 poc 误报比较多，想暂时禁用掉（并反馈给 xray)，那么就可以在这一个配置中加上 poc 的名字，比如:
+
+        ```yaml
+        plugins:
+        ...
+        phantasm:
+        enabled: true
+        exclude_poc:
+        - poc-yaml-bad-poc
+        - *bad-poc*
+        ```
+
+        `include_poc` 是用于加载本地的 poc 的配置，最好指定绝对路径，且同样支持 glob 语法。
+
+        一个稍微复杂的情况是将这两个搭配起来使用，比如:
+
+        ```yaml
+        plugins:
+        ...
+        phantasm:
+        enabled: true
+        exclude_poc:
+        - /home/poc/poc-fake-good-poc
+        include_poc:
+        - /home/poc/*good-poc*
+        ```
+
+        上述配置的意思是加载 `/home/poc/` 目录下所有符合 `*good-poc*` 这个pattern 的poc，同时去掉同样目录下的 `poc-fake-good-poc`
+
+        `poc_tags` 是用于对内置的POC进行打标签，`poc-yaml-test`为poc的name，`["HW", "ST"]`为该POC的标签。
+
+        使用示例如下：
+        `./xray ws --tags ST,HW`
+        这个时候，xray将会加载带有ST标签的POC。
+
+        注：--tags可以与--level，--poc同时使用
+    </Accordion>
+    <Accordion title="xstream">
+        在`xstream`模块中，有一个特殊选项：`full`
+
+        一般情况下`xml`请求是通过`POST`方法的`Body`发送，但特殊情况下可能会通过普通的某个参数发送。由于这种情况需要发送大量的数据包，所以默认关闭。如果你确定要使用这种测试方法，可以设置`full`参数为`true`
+
+        ```yaml
+        xstream:
+        enabled: true
+        full: false
+        ```
+
+        注：如果你发现`XStream`模块的`PoC`和对应`CVE`不符，这是正常情况。`XStream`历史上有很多的`CVE`漏洞，我们的检测逻辑是当某一个版本存在多个`CVE`漏洞时，只要能够检测到其中一个漏洞就会输出当前版本存在的所有漏洞
+
+        由于我们使用反连来确认`XStream`漏洞，所以该模块几乎不会产生误报
+    </Accordion>
+</AccordionGroup>
+
+## 被动代理（Mint）
+
+```yaml
+mitm:
+  ca_cert: ./ca.crt                     # CA 根证书路径
+  ca_key: ./ca.key                      # CA 私钥路径
+  basic_auth:                           # 基础认证的用户名密码
+    username: ""
+    password: ""
+  allow_ip_range: []                    # 允许的 ip，可以是 ip 或者 cidr 字符串
+  restriction:                          # 代理能够访问的资源限制, 以下各项为空表示不限制
+    hostname_allowed: []                # 允许访问的 Hostname，支持格式如 t.com、*.t.com、1.1.1.1、1.1.1.1/24、1.1-4.1.1-8
+    hostname_disallowed:                # 不允许访问的 Hostname，支持格式如 t.com、*.t.com、1.1.1.1、1.1.1.1/24、1.1-4.1.1-8
+    - '*google*'
+    - '*github*'
+    - '*.gov.cn'
+    - '*chaitin*'
+    - '*.xray.cool'
+    port_allowed: []                    # 允许访问的端口, 支持的格式如: 80、80-85
+    port_disallowed: []                 # 不允许访问的端口, 支持的格式如: 80、80-85
+    path_allowed: []                    # 允许访问的路径，支持的格式如: test、*test*
+    path_disallowed: []                 # 不允许访问的路径, 支持的格式如: test、*test*
+    query_key_allowed: []               # 允许访问的 Query Key，支持的格式如: test、*test*
+    query_key_disallowed: []            # 不允许访问的 Query Key, 支持的格式如: test、*test*
+    fragment_allowed: []                # 允许访问的 Fragment, 支持的格式如: test、*test*
+    fragment_disallowed: []             # 不允许访问的 Fragment, 支持的格式如: test、*test*
+    post_key_allowed: []                # 允许访问的 Post Body 中的参数, 支持的格式如: test、*test*
+    post_key_disallowed: []             # 不允许访问的 Post Body 中的参数, 支持的格式如: test、*test*
+  queue:
+    max_length: 3000                    # 队列长度限制, 也可以理解为最大允许多少等待扫描的请求, 请根据内存大小自行调整
+  proxy_header:
+    via: ""                             # 是否为代理自动添加 Via 头
+    x_forwarded: false                  # 是否为代理自动添加 X-Forwarded-{For,Host,Proto,Url} 四个 http 头
+  upstream_proxy: ""                    # 为 mitm 本身配置独立的代理
+```
+
+<AccordionGroup>
+    <Accordion title="代理启用密码保护">
+        对应于 `auth` 中的配置。
+
+        xray 支持给代理配置基础认证的密码，当设置好 `auth` 中的 `username` 和 `password` 后，使用代理时浏览器会弹框要求输出用户名密码，输入成功后代理才可正常使用。
+
+    </Accordion>
+
+    <Accordion title="限制允许使用该代理的 IP">
+        配置中的 `allow_ip_range` 项可以限制哪些 IP 可以使用该代理。支持单个 IP 和 CIDR 格式的地址，如：
+
+        ```yaml
+        allow_ip_range: ["127.0.0.1","192.168.1.1/24"]
+        ```
+
+        留空则允许所有地址访问，如果来源 IP 没有在配置的地址内，使用者会显示这样的错误:
+        ![ip_range.jpg](/images/tools/xray/allow_ip_range.jpg)
+    </Accordion>
+
+    <Accordion title="限制访问的端口、路径、Query Key等">
+        #### 对于端口
+
+        可以添加类似 `port_disallowed: [80,443,90-92]`这样的内容，这样xray的被动代理就不会再对80，443，90，91，92这五个端口的请求进行扫描
+
+        #### 对于Query Key
+
+        + **当设置了 `query_key_allowed: ["id"]`的情况下：**
+
+        | 情况                               | 例子                                    | xray状态       |
+        | ---------------------------------- | --------------------------------------- | -------------- |
+        | 请求不含任何的 `query key`       | `https://docs.xray.cool/`             | 扫描会正常进行 |
+        | 请求存在一个 `query key`且是id   | `https://docs.xray.cool/?id=1`        | 扫描会正常进行 |
+        | 请求存在一个 `query key`但不是id | `https://docs.xray.cool/?page=2`      | xray将不会扫描 |
+        | 请求存在多个 `query key`且包含id | `https://docs.xray.cool/?page=2&id=1` | xray将不会扫描 |
+
+
+        + **当设置了 `query_key_disallowed: ["id"]`的情况下：**
+
+        | 情况                               | 例子                                    | xray状态       |
+        | ---------------------------------- | --------------------------------------- | -------------- |
+        | 请求不含任何的 `query key`       | `https://docs.xray.cool/`             | 扫描会正常进行 |
+        | 请求存在一个 `query key`且是id   | `https://docs.xray.cool/?id=1`        | xray将不会扫描 |
+        | 请求存在一个 `query key`但不是id | `https://docs.xray.cool/?page=2`      | 扫描会正常进行 |
+        | 请求存在多个 `query key`且包含id | `https://docs.xray.cool/?page=2&id=1` | xray将不会扫描 |
+
+        + 其他参数以此类推
+
+    </Accordion>
+    <Accordion title="队列长度配置">
+        ```yaml
+        queue:
+        max_length: 3000
+        ```
+
+        在做被动扫描时，xray 收到一个请求可能要发出去上百个请求进行扫描，所以获取请求和消耗请求的速度不一定匹配，这是一个经典的生产者消费者问题，如果生产消费速度不匹配，就需要一个中间的队列来临时存储，这个队列的大小就是 `max_length`。
+
+        xray 将每 10s 打印一下当前任务队列长度，一旦堆积的数量达到 `max_length`，代理将会 “卡住”，新请求无法通过，等待队列中的请求被处理后再继续生效。默认配置的 10000 表示最多允许堆积 10000 个请求。
+
+        如果发现队列长度经常变满，可能是扫描速度太慢，可以尝试减少请求超时的时间和增加最大并发请求数，详见 `http` 配置章节。
+
+        如果 `max_length` 设置的过大，会造成 xray 内存占用过大，甚至可能会造成内存不足 OOM 进程崩溃。比如我们假设一个 http 请求加响应为 20kb，那 3000 个请求理论上内存占用至少为 60Mb，实际场景下可能会比理论值还要大很多。
+
+        更多信息可以参见[扫描速度](guide/speed)。
+    </Accordion>
+    <Accordion title="代理请求头配置：proxy_header">
+        ```
+        proxy_header:
+        via: "" # 如果不为空，proxy 将添加类似 Via: 1.1 $some-value-$random 的 http 头
+        x_forwarded: false # 是否添加 X-Forwarded-{For,Host,Proto,Url} 四个 http 头
+        ```
+
+        如果开启 proxy_header，代理会添加 `via` 头和 `X-Forwarded-*` 系列头。如果在请求中就已经存在了同名的 HTTP 头，那么将会追加在后面。
+
+        比如 `curl http://127.0.0.1:1234 -H "Via: test" -H "X-Forwarded-For: 1.2.3.4" -v`，后端实际收到的请求将会是
+
+        ```http
+        GET / HTTP/1.1
+        Host: 127.0.0.1:1234
+        User-Agent: curl/7.54.0
+        Accept: */*
+        Via: test, 1.1 xray-1fe7f9e5241b2b150f32
+        X-Forwarded-For: 1.2.3.4, 127.0.0.1
+        X-Forwarded-Host: 127.0.0.1:1234
+        X-Forwarded-Proto: http
+        X-Forwarded-Url: http://127.0.0.1:1234/
+        Accept-Encoding: gzip
+        ```
+    </Accordion>
+    <Accordion title="代理的代理：upstream_proxy">
+        <Warning>该项配置仅对 http 代理本身生效，不对漏洞扫描发出的请求生效。如果想配置漏洞扫描时的代理，请参照配置文件 `http` 部分的配置。</Warning>
+
+        假如启动 xray 时配置的 listen 为 `127.0.0.1:1111`，`upstream_proxy` 为 `http://127.0.0.1:8080`, 那么浏览器设置代理为 `http://127.0.0.1:1111`，整体数据流如下:
+
+        ![](/images/tools/xray/upstream.jpg)
+
+        再次重申下，该配置仅影响代理本身，不会影响插件在漏洞探测时的发包行为，如果想代理漏洞探测的，请参照接下来的 [HTTP配置](#http) 的部分!
+    </Accordion>
+</AccordionGroup>
+
+
+## 基础爬虫（Basic Crawler）
+
+```yaml
+basic-crawler:
+  max_depth: 0                          # 最大爬取深度， 0 为无限制
+  max_count_of_links: 0                 # 本次爬取收集的最大链接数, 0 为无限制
+  allow_visit_parent_path: false        # 是否允许爬取父目录, 如果扫描目标为 t.com/a/且该项为 false, 那么就不会爬取 t.com/ 这级的内容
+  restriction:                          # 爬虫的允许爬取的资源限制, 为空表示不限制。爬虫会自动添加扫描目标到 Hostname_allowed。
+    hostname_allowed: []                # 允许访问的 Hostname，支持格式如 t.com、*.t.com、1.1.1.1、1.1.1.1/24、1.1-4.1.1-8
+    hostname_disallowed:                # 不允许访问的 Hostname，支持格式如 t.com、*.t.com、1.1.1.1、1.1.1.1/24、1.1-4.1.1-8
+    - '*google*'
+    - '*github*'
+    - '*.gov.cn'
+    - '*chaitin*'
+    - '*.xray.cool'
+    port_allowed: []                    # 允许访问的端口, 支持的格式如: 80、80-85
+    port_disallowed: []                 # 不允许访问的端口, 支持的格式如: 80、80-85
+    path_allowed: []                    # 允许访问的路径，支持的格式如: test、*test*
+    path_disallowed: []                 # 不允许访问的路径, 支持的格式如: test、*test*
+    query_key_allowed: []               # 允许访问的 Query Key，支持的格式如: test、*test*
+    query_key_disallowed: []            # 不允许访问的 Query Key, 支持的格式如: test、*test*
+    fragment_allowed: []                # 允许访问的 Fragment, 支持的格式如: test、*test*
+    fragment_disallowed: []             # 不允许访问的 Fragment, 支持的格式如: test、*test*
+    post_key_allowed: []                # 允许访问的 Post Body 中的参数, 支持的格式如: test、*test*
+    post_key_disallowed: []             # 不允许访问的 Post Body 中的参数, 支持的格式如: test、*test*
+  basic_auth:                           # 基础认证信息
+    username: ""
+    password: ""
+```
+
+## 反连平台（Reverse）
+
+反连平台常用于解决没有回显的漏洞探测的情况，最常见的应该属于 ssrf 和 存储型xss。渗透测试人员常用的 xss 平台就是反连平台。
+如果你不理解上面这句话，可以先去学习一下这两个漏洞，否则这篇文章也是看不懂的。
+
+在 xray 中，反连平台默认不启用，因为这里面有些配置没有办法自动化，必须由人工配置完成才可使用。需要反连平台才可以检测出来的漏洞包括但不限于：
+
++ ssrf
++ fastjson
++ s2-052
++ xxe 盲打
++ 所有依赖反连平台的 poc
+
+反连平台相关的配置为:
+
+```yaml
+reverse:
+  db_file_path: ""                      # 反连平台数据库文件位置, 这是一个 KV 数据库
+  token: ""                             # 反连平台认证的 Token, 独立部署时不能为空
+  http:
+    enabled: true
+    listen_ip: 0.0.0.0
+    listen_port: ""
+    ip_header: ""                       # 在哪个 http header 中取 ip，为空代表从 REMOTE_ADDR 中取
+  client:
+    remote_server: false                # 是否是独立的远程 server，如果是要在下面配置好远程的服务端地址
+    http_base_url: ""                   # 默认将根据 ListenIP 和 ListenPort 生成，该地址是存在漏洞的目标反连回来的地址, 当反连平台前面有反代、绑定域名、端口映射时需要自行配置
+    dns_server_ip: ""                   # 和 http_base_url 类似，实际用来访问 dns 服务器的地址
+```
+如果你对比过本地生成的配置文件会发现我们隐掉了 dns 相关的配置，这是因为这部分的配置非常繁杂易错，我们放在[如何部署xray反连平台](/tools/xray/AdvancedUsage#reverse)进行详细的介绍
+
+接下来我们从场景触发，介绍在不同场景下应该如何配置反连平台才能扫出上述依赖反连的漏洞。
+
+<AccordionGroup>
+    <Accordion title="场景分析">
+        <Warning>注意，下面的配置删除了没有修改的项目</Warning>
+        ### 场景1 - xray 和目标可以使用 ip 双向互联
+
+        假设 192.168.1.2 是 xray 所在机器的地址
+
+        ```yaml
+        reverse:
+        http:
+        enabled: true
+        listen_ip: 192.168.1.2
+        ```
+
+        这里的 192.168.1.2 是 xray 所在的机器的地址, 也是扫描目标反连时所使用的地址，换句话说，当目标存在漏洞时，目标将主动访问 `http://192.168.1.2:xxx/xxx`，xray 会受到这样的“反连”回来的请求，并将漏洞结果展示出来。
+
+        ### 场景2 - xray 和目标可以使用 ip 双向互联，但 listen 的地址和目标反连访问的地址不一样
+
+        这种情况经常出现在云主机中，比如腾讯云的 linux 机器网卡地址时 10.xxx，但实际公网假设是 221.xxx
+
+        ```yaml
+        reverse:
+        http:
+        enabled: true
+        listen_ip: 0.0.0.0
+        client:
+        http_base_url: "http://221.xxx:${port}"
+        ```
+
+        `${port}` 是一个预定义的宏，在运行时将被替换为实际监听的端口, 当然你也可以使用这种方式固定监听的端口：
+
+        ```yaml
+        reverse:
+        http:
+        enabled: true
+        listen_ip: 0.0.0.0
+        listen_port: 8888
+        client:
+        http_base_url: "http://221.xxx:8888"
+        ```
+
+        ### 场景3 - 独立部署反连平台
+
+        上面两种场景说的都是在扫描时临时启动一个反连平台，实际上单独部署一个反连平台更加常见，比如上面说的 xss 平台其实就是单独部署的一个反连平台。
+
+        xray 自带了一个 `reverse` 命令，可以启动反连平台作为一个远程服务运行，给多个客户端使用。
+
+        ```
+        ./xray reverse
+        ```
+
+        在启动之前，需要配置好配置文件的 `db_file_path` 和 `token`，前者用于存储数据，后者用于服务端和客户端通信的秘钥。
+
+        一个示例的服务端配置是：
+
+        ```yaml
+        # 服务端
+        reverse:
+        db_file_path: "reverse.db"
+        token: "please_change_me_to_a_new_token"
+        http:
+        listen_ip: 0.0.0.0
+        listen_port: "80"
+        ```
+
+        与之对应的客户端配置是：
+
+        ```yaml
+        reverse:
+        token: "please_change_me_to_a_new_token"
+        client:
+        remote_server: true
+        http_base_url: "http://YOUR_REVERSE_SERVER_IP:80"
+        ```
+
+        这样扫描的时候就可以直接使用远程的反连服务，而无需自行启动。
+
+        <Warning>这种场景要求客户端和服务端使用的版本相同，否则可能出现协议不一致导致失败的情况。</Warning>
+    </Accordion>
+    <Accordion title="管理界面">
+        反连平台贴心的内置了一个管理界面，可以访问反连平台 http 地址，url 为 `/cland/`。
+
+        功能包括
+
+        - 生成自定义 url，并记录访问记录
+        - 生成自定义域名，并记录解析记录
+        - 使用平台预制 payload，记录抓取的数据
+
+        ![cland.jpg](/images/tools/xray/cland_1.jpg)
+
+        ![cland.jpg](/images/tools/xray/cland_2.jpg)
+    </Accordion>
+    <Accordion title="尝试一下！">
+        我相信你看了上面的配置依然是云里雾里，不妨自己试一下！一个很好的测试例子是 fastjson，从 vulhub 上拉取一个镜像并启动，配置好你的反连平台看下能不能扫出吧！
+
+        <Warning>fastjson 扫描仅高级版才支持</Warning>
+
+        <Warning>mac 下的 docker 由于网络环境特殊，其实无法双向互联，建议使用远程部署的模式或使用 `host.docker.internal` 作为 http_base_url 的 host</Warning>
+
+    </Accordion>
+    <Accordion title="DNS 相关">
+
+        详细配置内容请参考[如何部署xray反连平台](/tools/xray/AdvancedUsage#reverse)
+
+        - listen_ip 监听的 ip
+        - domain 在 dns 查询的时候的一级域名，默认为空，将使用随机域名。
+        - resolve 的配置类似常见的 dns 配置，如果反连平台收到配置的域名的解析请求，将按照配置的结果直接返回。
+        - is_domain_name_server 如果上述域名的 ns 服务器就是反连平台的地址，那么直接使用 `dig random.domain.com` 就可以让 dns 请求到反连平台，否则需要 `dig random.domain.com @reverse-server-ip` 指定 dns 服务器才可以。本配置项是指有没有配置 ns 服务器为反连平台的地址，用于提示扫描器内部 payload 的选择。
+
+    </Accordion>
+</AccordionGroup>
+
+## 子域名（Subdomain）
+
+<Warning>注意，此功能只在高级版中提供</Warning>
+
+```yaml
+subdomain:
+  max_parallel: 30                      # 子域名探测的并发度
+  allow_recursion: false                # 是否允许递归探测, 开启后，扫描完一级域名后，会自动将一级的每个域名作为新的目标
+  max_recursion_depth: 3                # 最大允许的递归深度, 3 表示 3 级子域名 仅当 allow_recursion 开启时才有意义
+  web_only: false                       # 结果中仅显示有 web 应用的, 没有 web 应用的将被丢弃
+  ip_only: false                        # 结果中仅展示解析出 IP 的，没有解析成功的将被丢弃
+  servers:                              # 子域名扫描过程中使用的 DNS Server
+  - 8.8.8.8
+  - 8.8.4.4
+  - 223.5.5.5
+  - 223.6.6.6
+  - 114.114.114.114
+  sources:
+    brute:
+      enabled: true
+      main_dict: ""                     # 一级大字典路径，为空将使用内置的 TOP 30000 字典
+      sub_dict: ""                      # 其他级小字典路径，为空将使用内置过的 TOP 100 字典
+    httpfinder:
+      enabled: true                     # 使用 http 的一些方式来抓取子域名，包括 js, 配置文件，http header 等等
+    dnsfinder:
+      enabled: true                     # 使用 dns 的一些错误配置来找寻子域名，如区域传送（zone transfer)
+    certspotter:                        # 下面的通过 api 获取的了
+      enabled: true
+    crt:
+      enabled: true
+    hackertarget:
+      enabled: true
+    qianxun:
+      enabled: true
+    rapiddns:
+      enabled: true
+    sublist3r:
+      enabled: true
+    threatminer:
+      enabled: true
+    virusTotal:
+      enabled: true
+
+```
+
+## 更新（Update）
+
+xray 内置了一个简单的更新检查机制，会在每次启动的时候检查有无新的版本发布，如果有更新将在界面上显示最新的 release notes。
+如不需要该机制，可以通过下列方法禁用:
+
+在 `config.yaml` 中添加如下配置即可禁用更新检查:
+
+```yaml
+update:
+  check: false
+```
