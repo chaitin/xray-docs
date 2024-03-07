@@ -40,7 +40,7 @@ rules:
   r0:
     request:
       method: POST
-      path: /admin%20/upload-srv-1
+      path: /admin%20/upload-srv-1/test
       headers:
         Content-Type: application/x-www-form-urlencoded
       body: xxxxxxxxxxxx
@@ -55,7 +55,7 @@ rules:
   r1:
     request:
       method: POST
-      path: /admin%20/upload-srv-2
+      path: /admin%20/upload-srv-2/test
       headers:
         Content-Type: application/x-www-form-urlencoded
       body: xxxxxxxxxxxx
@@ -70,7 +70,7 @@ rules:
   r2:
     request:
       method: POST
-      path: /admin%20/upload-srv-3
+      path: /admin%20/upload-srv-3/test
       headers:
         Content-Type: application/x-www-form-urlencoded
       body: xxxxxxxxxxxx
@@ -85,7 +85,7 @@ rules:
   r3:
     request:
       method: POST
-      path: /admin%20/upload-srv-4
+      path: /admin%20/test
       headers:
         Content-Type: application/x-www-form-urlencoded
       body: xxxxxxxxxxxx
@@ -131,28 +131,28 @@ payloads:
 	payloads:
 		upload1:
 			path: |
-				"upload-srv-1"
+				"upload-srv-1/"
 			body: |
 				"xxxxxxxxxxxx"
 			re: |
 				"aaaaaaaa"
 		upload2:
 			path: |
-				"upload-srv-2"
+				"upload-srv-2/"
 			body: |
 				"xxxxxxxxxxxx"
 			re: |
 				"bbbbbbbb"
 		upload3:
 			path: |
-				"upload-srv-3"
+				"upload-srv-3/"
 			body: |
 				"xxxxxxxxxxxx"
 			re: |
 				"cccccccc"
 		upload4:
 			path: |
-				"upload-srv-4"
+				""
 			body: |
 				"xxxxxxxxxxxx"
 			re: |
@@ -161,7 +161,7 @@ rules:
 	r0:
 		request:
 			method: POST
-			path: /admin%20/{{path}}
+			path: /admin%20/{{path}}test
 			headers:
 				Content-Type: application/x-www-form-urlencoded
 			body: |
@@ -187,5 +187,7 @@ detail:
 - payload的`名称`和内部具体需要填充的内容都可以以key的形式进行呈现，非常有利于我们对不同的利用方式进行区分与修改，同时不必去费尽心思去想如何对不同的rule进行命名
 - 大幅缩短了所编写poc的长度，在方便日常阅读的同时更有利于后续整体的大小优化
 - 在需要添加一些利用手段时，只需要在payload中继续添加利用方式即可，而不用再回到rule中，重新了解rule该去如何编写
+
+<Warning>在对路径进行替换的时候，因为需要替换的内容是在中间，所以需要注意`/`的问题，我们需要将`/`写在payloads中，而不是原文中，这样，在值为空的时候才不会出现两个`/`导致解析出现问题的情况。可以重点关注upload4的path与其他的path在替换后的不同</Warning>
 
 综上，当我们执行的rule数量较多且互相重复(拥有相同的访问路径，参数以及判断表达式)时，`非常推荐`将rule抽象为payloads进行处理

@@ -1,17 +1,19 @@
 ---
 title: '编写模板'
+description: '指纹编写模版以及对应的字段解释及规范'
 ---
 
-```
-name: test
+## 模版（Template）
+
+```yaml
+name: fingerprint-<yaml|go>-<vendor-cpe>-<product-cpe>-<product-uuid>
 transport: http
 
 detail:
-  cpe: test:test
-  version: '{{version}}'
-  
-rules:
+  fingerprint:
+    version: '{{version}}'
 
+rules:
   kw_in_body:
     request:
       cache: true
@@ -23,5 +25,38 @@ rules:
       && response.body_string.contains("keyword2")
 
 expression: kw_in_body()
-
 ```
+
+## 字段说明（Field Description）
+
+### name
+
+作为确定是否是指纹的关键之一，一定以fingerprint开头，后面跟上厂商和产品即可。
+
+`fingerprint-<yaml|go>-<vendor-cpe>-<product-cpe>-<product-uuid>`
+
+1. yaml|go：相应指纹的语言类型
+2. vendor-cpe：厂商CPE
+3. product-cpe：产品CPE
+4. product-uuid：产品UUID
+
+使用攻防知识库的编辑器创建指纹时，该名称将会自动生成
+
+### rules name
+
+由于指纹说白了就是在目标站点上找特征，而特征一般就会在几个位置上，所以我们对规则的名称做了一定的规范，便于阅读分类
+
+| 名称                                      | 位置                                                    |
+|-----------------------------------------|-------------------------------------------------------|
+| `favicon_hash`                          | 特征为icon的hash值                                         |
+| `md5_in_<position>`                     | 特征为某一部分的md5值，例如body返回固定的内容，就可以是：md5_in_body           |
+| `kw_in_body`                            | 特征在body中                                              |
+| `kw_in_404_body`                        | 当特征在404页面的body中时，可以这样写                                |
+| `kw_in_header \|\| kw_in_<header_name>` | 特征在header中，当明确在某一个header中时，可以直接写对应的位置，例如：kw_in_server |
+| `kw_in_cert`                            | 特征在证书中                                                |
+
+<Tip>当有多个同类规则时使用数字隔开，例如 `kw_in_body_00`、`kw_in_body_01`</Tip>
+
+### detail
+
+其中的`{{version}}`主要是在指纹匹配到对应的信息，能够明确版本的时候，通过output，可以输出一些版本信息，此处就用来接收和展示对应的版本信息。

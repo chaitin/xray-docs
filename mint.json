@@ -152,12 +152,6 @@
       ]
     },
     {
-      "group": "GO",
-      "pages": [
-        "plugins/go/Index"
-      ]
-    },
-    {
       "group": "最佳实践",
       "pages": [
         {
@@ -186,9 +180,16 @@
         {
           "group": "Fingerprint",
           "pages": [
-            "plugins/practice/finger/Template"
+            "plugins/practice/finger/Template",
+            "plugins/practice/finger/Practice"
           ]
         }
+      ]
+    },
+    {
+      "group": "GO",
+      "pages": [
+        "plugins/go/Index"
       ]
     },
     {

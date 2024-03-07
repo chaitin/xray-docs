@@ -1,0 +1,349 @@
+---
+title: '最佳实践'
+description: '本文将展示在不同场景下的最佳编写实践和一些编写规范'
+---
+
+## 相关定义
+
+### 被动指纹（Passive）
+
+- 不请求： 不写request结构
+- / 请求， 无其它额外设置
+```yaml
+request:
+  cache: true
+  method: GET
+  path: /
+```
+- icon： 使用 getIconContent 函数
+
+### 主动指纹（Active）
+
+除被动指纹外的情况都属于主动指纹
+
+## 编写规范（Prepare a specification）
+<AccordionGroup>
+    <Accordion title="1. 脚本应该通过 lint 的校验">
+        目前 lint 会检查以下内容
+            1. celcheck：用于校验 cel 语句是否能够运行，类型推到的结果是否正确。
+            2. schemacheck：校验脚本内容是否符合编写的 json schema 格式，用于检测是否有必须填写的字段缺失。
+            3. payloadcheck：检查每一个 payload 分支内声明的变量类型是否是一致的。
+            4. transportcheck：校验 rule 中的请求是否符合规范。
+            5. 相关细节以及对应修复方式请参考[YAML插件修复手册](/plugins/yaml/Fix)
+    </Accordion>
+    <Accordion title="2. 将越常命中的规则放在越靠前的位置">
+        当存在多个‘或’逻辑的时候，系统会按序执行，直到命中一个才会停止，所以，将常命中的规则放在越靠前的位置能够有效的减少不必要的发包
+    </Accordion>
+    <Accordion title="3. 如无特殊需要，不编写主动指纹，避免请求量爆炸">
+        被动指纹指的是只向根路径发包，或者只使用获取icon的函数进行指纹识别的指纹，而除了这两种情况，其他的都属于主动指纹。
+    </Accordion>
+</AccordionGroup>
+## 通过 ICON HASH 匹配
+
+<Tip>建议规则名称：`favicon_hash`</Tip>
+
+### 便捷计算icon hash的方式
+
+<Tabs>
+    <Tab title="Windows">
+        <Tip>将下列代码放入powershell中运行，请确保你对应版本的python有安装requests，mmh3包</Tip>
+        <CodeGroup>
+
+            ```powershell python3
+            function Get-IconHash {
+            param(
+                [string]$url
+            )
+            python -c "import requests,sys,mmh3,codecs;print('icon_hash=' + str(mmh3.hash(codecs.lookup('base64').encode(requests.get('$url').content)[0])))"
+            }
+            ```
+
+            ```powershell python2
+            function Get-IconHash {
+            param(
+                [string]$url
+            )
+            python -c "import requests,sys,mmh3,codecs;response = requests.get(sys.argv[1]);favicon = codecs.encode(response.content, 'base64');hash = mmh3.hash(favicon);print 'icon_hash=%s' % hash" $url
+            }
+            ```
+
+        </CodeGroup>
+
+        使用示例：
+        ```powershell
+        Get-IconHash 'https://www.baidu.com/favicon.ico'
+
+        # 运行结果
+        icon_hash=-1588080585
+        ```
+
+    </Tab>
+    <Tab title="Linux">
+        <Tip>将下列代码放入bash中运行，请确保你对应版本的python有安装requests，mmh3包</Tip>
+        <CodeGroup>
+
+            ```bash python3
+            alias icon_hash="python3 -c \"import requests,sys,mmh3,codecs;print('icon_hash=%s'%mmh3.hash(codecs.lookup('base64').encode(requests.get(sys.argv[1]).content)[0]))\""
+            ```
+
+            ```bash python2
+            alias icon_hash="python2 -c \"import requests,sys,mmh3;print mmh3.hash(requests.get(sys.argv[1]).content.encode('base64'))\""
+            ```
+
+        </CodeGroup>
+
+        使用示例：
+        ```bash
+        icon_hash https://www.baidu.com/favicon.ico
+
+        # 运行结果
+        icon_hash=-1588080585
+        ```
+
+    </Tab>
+</Tabs>
+
+### 使用内置函数自动搜索 ICON 路径
+
+```yaml
+rules:
+  favicon_hash:
+    request:
+      method: GET
+      path: /
+    expression: |-
+      faviconHash(response.getIconContent()) == 149371702
+```
+
+### 自定义 ICON 路径
+
+```yaml
+rules:
+  favicon_hash:
+    request:
+      method: GET
+      path: /not_normal_favicon_path.ico
+    expression: |-
+      faviconHash(response.body) == 149371702
+```
+
+## 通过内容MD5匹配
+
+<Tip>建议规则名称：`md5_in_[position]`</Tip>
+
+```yaml
+rules:
+  md5_in_body:
+    request:
+      method: GET
+      path: /this_is_test_path
+    expression: |-
+      md5(response.body) == "ce1a1c8754948c6cbfcfa48545e8174b"
+```
+
+## 通过 Body 关键字匹配
+
+<Tip>建议规则名称：`kw_in_body`</Tip>
+
+### 基础模版（Basic templates）
+
+```yaml
+rules:
+  kw_in_body:
+    request:
+      method: GET
+      path: /
+    expression: |-
+      response.body_string.contains("<hr><center>openresty")
+```
+
+### 匹配的字符串中包含引号（inverted comma）
+
+```yaml
+rules:
+  kw_in_body:
+    request:
+      method: GET
+      path: /
+    expression: |-
+      response.body_string.contains('href="https://www.cloudflare.com/5xx-error-landing"')
+```
+
+### 忽略大小写（ignore capitals）
+
+```yaml
+rules:
+  kw_in_body:
+    request:
+      method: GET
+      path: /
+    expression: |-
+      response.body_string.icontains('seeyon')
+```
+
+### 二进制内容匹配（binary）
+
+```yaml
+rules:
+  kw_in_body:
+    request:
+      method: GET
+      path: /
+    expression: |-
+      response.body.bcontains(b'\xe6\x98\x93\xe7\xbd\x91\xe5\x85\xb3')
+```
+
+## 通过 Header 关键字匹配
+
+<Tip>建议规则名称：`kw_in_header || kw_in_[header_name]`</Tip>
+
+### Cookie 匹配
+
+```yaml
+rules:
+  kw_in_cookie:
+    request:
+      method: GET
+      path: /
+    expression: |-
+      response.headers["Cookie"].contains("JSESSIONID=")
+```
+
+### Server 匹配
+
+```yaml
+rules:
+  kw_in_server:
+    request:
+      method: GET
+      path: /
+    expression: |-
+      response.headers["server"].contains("Apache/")
+```
+
+### 不常见的 Header Key 匹配（规则名称统一使用 kw_in_header）
+
+```yaml
+rules:
+  kw_in_header:
+    request:
+      method: GET
+      path: /
+    expression: |-
+      response.headers["X-Protected-By"].contains("OpenRASP")
+```
+
+### 判断某个 Key 是否在 Headers 中
+
+```yaml
+rules:
+  kw_in_header:
+    request:
+      method: GET
+      path: /
+    expression: |-
+      "CF-RAY" in response.headers
+```
+
+### 在完整响应头中匹配（raw_header）
+
+```yaml
+rules:
+  kw_in_header:
+    request:
+      method: GET
+      path: /
+    expression: |-
+      response.raw_header.bcontains(b'HP-ChaiSOE')
+```
+
+## 通过 CERT 关键字匹配
+
+<Tip>建议规则名称：kw_in_cert</Tip>
+
+```yaml
+rules:
+  kw_in_cert:
+    request:
+      method: GET
+      path: /
+    expression: |-
+      response.raw_cert.ibcontains(b"SANGFOR VMP")
+```
+
+## 通过 404Path 进行特征匹配
+
+```yaml
+name: xxxxx
+transport: http
+detail:
+  cpe: xxxx
+set:
+  pathname: get404Path()
+rules:
+  kw_in_404_body:
+    request:
+      method: GET
+      path: /{{pathname}}
+    expression: response.body_string.contains("xxxx")
+expression: kw_in_404_body()
+```
+
+## 多个 Context 匹配的简化写法
+
+<Tip>
+  详见[全局变量载荷 - payload](../../yaml/advanced/Payloads)
+</Tip>
+
+```yaml
+name: hessian
+transport: http
+detail:
+  cpe: caucho_technology:hessian
+  version: '{{version}}'
+payloads:
+  payloads:
+    p0:
+      path: |
+        "<path_0>"
+    p1:
+      path: |
+        "<path_1>"
+    p2:
+      path: |
+        "<path_2>"
+rules:
+  kw_in_body:
+    request:
+      method: POST
+      path: /{{path}}
+    expression: |
+      response.body_string.contains("xxx")
+expression: kw_in_body()
+```
+
+## 使用正则表达式进行匹配（RE）
+
+```yaml
+rules:
+  kw_in_body:
+    request:
+      method: GET
+      path: /
+    expression: |-
+      "/owa/auth/.*?/themes/resources/favicon.ico".matches(response.body_string)
+```
+
+## 使用正则提取信息（RE）
+
+```yaml
+version_detect:
+  request:
+    method: GET
+    path: /
+  expression: |
+    "server" in response.headers && response.headers["server"].contains("nginx")
+  output:
+    version: |
+      "^nginx/(?P<version>.*)$".submatch(response.headers["server"])["version"]
+```
