@@ -37,6 +37,91 @@ request:
     <Accordion title="3. 如无特殊需要，不编写主动指纹，避免请求量爆炸">
         被动指纹指的是只向根路径发包，或者只使用获取icon的函数进行指纹识别的指纹，而除了这两种情况，其他的都属于主动指纹。
     </Accordion>
+    <Accordion
+      title="4. 在使用关键字进行匹配时，要求使用包含产品特征的关键字，而且尽可能长，避免误报"
+    >
+      例如匹配discuz的时候，关键词中最好带有该产品的特殊的内容，例如`discuz_uid`等。
+      特别的：部分通用系统存在二次开发修改title的情况，因此title只能作为辅助判断的逻辑，只能算作加强规则，不能作为决定性证据
+    </Accordion>
+    <Accordion
+      title="5. 当有多条被动指纹规则时，尽量使用&&组合两条规则，减少单条规则容易造成的误报"
+    >
+      一般来讲，符合第四点的情况下，两条规则即可
+    </Accordion>
+    <Accordion
+      title="6. 如无特殊需要，指纹规则中不带攻击特征，避免被 WAF 拦截"
+    >
+      一般有两种情况，一种是spring的访问/env等路径，有些时候会被拦；一种情况是path中带有admin，有些waf会拦截
+    </Accordion>
+    <Accordion
+      title="7. 优先使用 contains、其次 icontains，减少运行过程中不必要的资源消耗"
+    >
+      icontains在匹配时会忽略匹配字母的大小写，增加资源消耗
+    </Accordion>
+    <Accordion
+      title="8. 在处理所有的 404 页面时统一使用get404Path()函数获取路径"
+    >
+      [get404Path](/plugins/yaml/TypeFunc/example/http/get404path)函数做了一些特殊处理，这个函数可以保证一个目标将仅拥有一个404path，这样便于使用cache，降低发包，提高效率。
+    </Accordion>
+    <Accordion
+      title="9. 如果能自动获取 icon， 尽量通过 getIconContent 来自动获取图标内容"
+    >
+      [getIconContent](/plugins/yaml/TypeFunc/example/other/getIconContent)函数可以在响应中获取icon地址，然后访问这个icon获取其字节流数据。
+    </Accordion>
+    <Accordion
+      title="10. 取特征时，不要在header头Set-Cookie中取"
+    >
+      因为引擎在做批量扫描时会先访问一次根路径，所以之后的请求包中通常不会有Set-Cookie的响应头，导致无法命中
+    </Accordion>
+    <Accordion
+      title="11. 尽量使用推荐的规则名称，当有多个同类规则时使用数字隔开"
+    >
+      例如：kw_in_body_01、kw_in_body_02
+    </Accordion>
+    <Accordion
+      title="12. 当存在多个版本匹配的规则的时候，建议使用payloads进行编写，提高插件的可阅读性，必要时可以使用三目运算符做判断"
+    >
+      详情参考：[三目运算符的使用方式](/plugins/yaml/advanced/Set#ternary-operator)
+      ```yaml
+      name: fingerprint-yaml-tcp-mysql
+      manual: false
+      transport: tcp
+      set:
+        GenericLines: b"\r\n\r\n"
+      payloads:
+        payloads:
+          l:
+            re: '"(?s)^.\\0\\0\\0\\xffj\\x04''[\\d.]+'' .* MySQL"'
+          m:
+            re: '"(?s)^.\\0\\0\\0\\x0a(?P<version>5\\.[-_~.+:\\w]+MariaDB-[-_~.+:\\w]+~bionic)\\0"'
+          n:
+            re: '"(?s)^.\\0\\0\\0\\x0a(?P<version>[\\w._-]+)\\0............\\0\\x5f\\xd3\\x2d\\x02\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0............\\0$"'
+          r:
+            re: '"(?s)^.\\0\\0\\0\\x0a(?P<version>3\\.[-_~.+\\w]+)\\0...\\0"'
+          s:
+            re: '"(?s)^.\\0\\0\\0\\x0a(?P<version>4\\.[-_~.+\\w]+)\\0"'
+      rules:
+        r1:
+          request:
+            cache: true
+            content: '{{GenericLines}}'
+          expression: re.bmatches(response.raw)
+          output:
+            result: re.bsubmatch(response.raw)
+            osname: |
+              re.contains("bionic") ? "Linux" : ""
+            version: result["version"]
+      expression: r1()
+      detail:
+        fingerprint:
+          infos:
+            - type: system_bin
+              name: mysql
+              version: '{{version}}'
+            - type: operating_system
+              name: '{{osname}}'
+      ```
+    </Accordion>
 </AccordionGroup>
 ## 通过 ICON HASH 匹配
 
