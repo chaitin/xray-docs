@@ -941,37 +941,35 @@ title: '编写模板'
 ### 弱口令类（Weak password）
 
 ```yaml
-name: poc-yaml-test
+name: poc-yaml-activemq-weak-password
 manual: true
 transport: http
 payloads:
-  continue: false
   payloads:
-  p1:
-    username: |
-      "kevinaaa"
-    password: |
-      "kevinbbb"
-  p2:
-    username: |
-      "developeraaa"
-    password: |
-      "developerbbb"
+    p1:
+      username: r"admin"
+      password: r"admin"
+      auth: base64(username + ":" + password)
 rules:
-  r1:
+  check:
     request:
-      method: POST
-      path: /http/index.php
-      follow_redirects: false
+      cache: true
+      method: GET
+      path: /admin/
+    expression: response.status == 401 && response.body.bcontains(b"Unauthorized")
+  auth:
+    request:
+      cache: false
+      method: GET
+      path: /admin/
       headers:
-        Content-Type: application/x-www-form-urlencoded
-      body: requester=login&username={{username}}&input_passwd={{password}}
-  expression: response.status == 200 && "{(.*)result['\"]\\s*:\\s*true(.*)}".bmatches(response.body)
-expression: r1()
+        Authorization: Basic {{auth}}
+    expression: response.status == 200 && response.body.bcontains(b"Welcome to the Apache ActiveMQ Console of") && response.body.bcontains(b"<h2>Broker</h2>")
+expression: check() && auth()
 detail:
-  author: test
+  author: Chaitin
   links:
-  - https://www.test.com
+    - http://test.com
 ```
 
 ## 难以无害化漏洞检测模版（Difficult to harmless）

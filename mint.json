@@ -173,6 +173,7 @@
                 "plugins/practice/poc/SSRF",
                 "plugins/practice/poc/Redirect",
                 "plugins/practice/poc/XSS",
+                "plugins/practice/poc/WeakPassword",
                 "plugins/practice/poc/Question"
               ]
             }
