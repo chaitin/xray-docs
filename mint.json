@@ -141,6 +141,7 @@
           "group": "高级用法",
           "pages": [
             "plugins/yaml/advanced/Set",
+            "plugins/yaml/advanced/Path",
             "plugins/yaml/advanced/Payloads",
             "plugins/yaml/advanced/Rules",
             "plugins/yaml/advanced/Details",
