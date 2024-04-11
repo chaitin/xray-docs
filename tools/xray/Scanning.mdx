@@ -95,7 +95,27 @@ description: 'xray的扫描方式分为被动扫描、主动扫描和服务扫�
         ![](/images/tools/xray/ios_install_ca_5.jpg)
         ![](/images/tools/xray/ios_install_ca_6.jpg)
     </Tab>
+
     <Tab title="Android">
+        高版本安卓(Android 7+)系统只有系统级的证书才能被信任，并且在标准情况下存放证书的`/system/etc/security/cacerts`被挂载为只读，证书安装相对困难，所以我们使用Magisk模块的方式加载证书
+
+        在[xray-CA-cert-module](https://github.com/Jlan45/xray-CA-cert-module/releases/tag/magisk)仓库中下载并安装对应模块，将xray本地的`ca.crt`和`ca.key`替换为release中的对应文件
+
+
+
+        在手机上下载对应的模块，并将安卓系统代理替换为xray监听设备的IP和端口
+
+        ![](/images/tools/xray/android_install_module_0.png)
+
+        在Magisk中安装模块
+        ![](/images/tools/xray/android_install_module_1.png)
+        ![](/images/tools/xray/android_install_module_3.png)
+        ![](/images/tools/xray/android_install_module_2.png)
+        Reboot And Enjoy ~ ~ ~
+        ![](/images/tools/xray/android_install_module_4.png)
+
+    </Tab>
+    <Tab title="Android < 8">
         可以将 `ca.crt` 文件传送到手机上，然后打开
 
         或者参考下面的步骤，将手机配置代理之后，使用浏览器访问 `http://xray/` 然后点击下载 ca 证书，然后再安装。
