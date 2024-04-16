@@ -110,7 +110,7 @@ rules:
 			cache: false
 			method: GET
 			path: /xxx?keyword=%27%2B(select(0)from(select(sleep(0)))v)%2B%27/
-		expression: response.status == 200
+		expression: response.status == 200 && response.body_string.contains("xxxxxxx")
 		output:
 			undelayedLantency: response.latency
 	r1:
@@ -148,7 +148,7 @@ detail:
         - 关于request的内容，除时间不同以外，`一定`要与第二条rule中的request信息保持一致
         - sleep的时间一定是`0s`
     2. 关于匹配的expression
-        - 符合接口的返回内容即可，比较`推荐`在其中匹配一些特有的返回结果，尽可能地消除网络环境所带来的误报问题，但是不做强求
+        - 符合接口的返回内容即可，**必须**在其中匹配一些特有的返回结果，否则将很有可能产生误报。
     3. 关于output的内容
         - 这条rule一定会有output的内容，其中的变量存储着这一条请求所花费的时间
 - 在第二条关于注入的rule中
@@ -160,7 +160,8 @@ detail:
         - 同时无特殊的情况下，`建议`除了时间差值的比较之外，其他的内容与第一条相同
 - 在第三条关于注入的rule中
     - 这一条的内容与第二条除了时间的取值都相同即可
-- **一定要注意添加read_timeout: "10"，不然扫描器会直接不等响应完就根据默认时间直接结束，同时要注意该漏洞的payload是否会被执行多次，造成等待时间翻倍的情况，如果存在，请自行缩短sleep时长，同时提高read_timeout的值**
+
+<Warning>一定要注意添加read_timeout: "10"，不然扫描器会直接不等响应完就根据默认时间直接结束，同时要注意该漏洞的payload是否会被执行多次，造成等待时间翻倍的情况，如果存在，请自行缩短sleep时长，同时提高read_timeout的值</Warning>
 
 <Tip>这里强求对页面中的部分内容进行匹配，目的是为了作为目标系统的指纹，消除网络环境的影响，防止一些不相干的系统造成的误报。同时匹配的内容不用过多，体现出目标系统的独特性即可</Tip>
 

