@@ -203,8 +203,8 @@ title: '编写模板'
           path: /index.php
           headers:
             Content-Type: application/x-www-form-urlencoded
-          body: <?={{s1}}-{{s2}};
-        expression: response.status == 200 && response.body_string.contains(string(s1 - s2))
+          body: <?={{s2}}-{{s1}};
+        expression: response.status == 200 && response.body_string.contains(string(s2 - s1))
     expression: r0()
     detail:
       author: test
@@ -235,8 +235,8 @@ title: '编写模板'
       links:
         - https://github.com/vulhub/vulhub/tree/master/php/CVE-2012-1823
     ```
-    Spring-Cloud SPEL">
-    ```yaml
+
+    ```yaml Spring-Cloud-SPEL
     name: poc-yaml-spring-cloud-function-spel-rce
     manual: true
     transport: http
