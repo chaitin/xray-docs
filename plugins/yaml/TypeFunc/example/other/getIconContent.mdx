@@ -1,5 +1,5 @@
 ---
-title: 'getIconContent'
+title: 'icon/getIconContent'
 description: '`getIconContent`函数主要是用来在响应中获取icon地址，然后访问这个icon获取其字节流数据'
 ---
 
@@ -20,7 +20,26 @@ description: '`getIconContent`函数主要是用来在响应中获取icon地址�
 - 如果还是没有找到icon的信息，则会访问`/favicon.ico`尝试获取icon的字节流数据
 - 该函数一般搭配`faviconHash()`一同使用，具体示例如下，测试地址为`https://docs.xray.cool`
 
-```yaml
+<CodeGroup>
+
+```yaml icon
+name: poc-yaml-test
+transport: http
+rules:
+  r0:
+    request:
+      method: GET
+      path: /
+      follow_redirects: false
+    expression: response.status == 200 && faviconHash(response.icon()) == 938617678
+expression: r0()
+detail:
+  author: test
+  links:
+    - test
+```
+
+```yaml getIconContent
 name: poc-yaml-test
 transport: http
 rules:
@@ -37,3 +56,4 @@ detail:
     - test
 ```
 
+</CodeGroup>

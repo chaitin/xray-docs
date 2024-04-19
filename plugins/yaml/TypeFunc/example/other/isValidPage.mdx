@@ -1,0 +1,33 @@
+---
+title: 'isValidPage'
+description: '`isValidPage` 函数用于验证给定的网页是否有效，通过检查 HTTP 响应的特定特征和与已知404页面的相似度'
+---
+
+## 函数原型
+
+`func isValidPage(resp response) bool`
+
+### 参数介绍
+
+| 参数名称 | 参数类型       | 参数介绍                        |
+|------|------------|------------------------------|
+| resp | response | 用于发出HTTP请求和缓存响应的HTTP客户端。 |
+
+### 返回值
+
+返回一个 bool 确定一个页面是否有效。
+
+## 举例
+
+```yaml
+name: leak-yaml-backup-default
+transport: http
+rules:
+  zip:
+    request:
+      path: /a.zip
+      headers:
+        Range: bytes=0-8096
+    expression: response.body.bstartsWith(b'PK\x03\x04') && !response.content_type.icontains("html") && isValidPage(response)
+expression: zip()
+```
