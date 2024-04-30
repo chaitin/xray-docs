@@ -11,9 +11,6 @@ description: 'Set的作用只为定义变量，在set中我们能对变量进行
     - `reverse: newReverse`
     - `reverseURL: reverse.url`
     - `reverseDomain: reverse.domain`
--  在变量中一定不要出现用户名密码等隐私内容(token，session等同理)；但是对于漏洞必须且非隐私的内容不作要求
-
-<Warning>注意，对于目前的poc收取方案来说，我们并不会接收登陆后认证才能够利用的poc，如果想提交相关poc，需要考虑是否能使用特征匹配的方法进行检测，衡量误报漏报的风险后再次提交</Warning>
 
 ## 使用中的常见问题（Common problem）
 
@@ -72,22 +69,22 @@ rules:
   </Accordion>
 
   <Accordion title="( r1 + r2 )">
-    r1, r2随机范围不一定需要完全相同，但是需要注意随机数的起始范围
+    随机值应该在100000000到1000000000之间，准确来说，r1和r2的数值应该在1073741823以内，也就是相加后不要超过32位，以便应对不同的目标
   </Accordion>
 
   <Accordion title="( r1 * r2 )">
-    r1, r2随机范围不一定需要完全相同，但是需要注意随机数的起始范围
+    推荐使用四位数*五位数，r1, r2的乘积应该在9位数，一是防止位数过小导致误报，而是防止位数过大导致32位的目标溢出
 </Accordion>
 </AccordionGroup>
 
-同时`建议`增加匹配系统中特征内容，例如下面的内容
+在存在其余特征的情况下，增加匹配系统中特征内容，例如下面的内容，计算出的结果正好被包裹在双引号中，那么匹配时就应该添加双引号
 
 ```yaml
 name: poc-yaml-test-test
 transport: http
 set:
 	r1: randomInt(1000, 3000)
-	r2: randomInt(1000, 3000)
+	r2: randomInt(10000, 30000)
 rules:
 r0:
 	request:
@@ -96,7 +93,7 @@ r0:
 		headers:
 		Content-Type: application/x-www-form-urlencoded
 		body: cmd={{r1}}*{{r2}};
-	expression: response.status == 200 && response.body_string.startsWith("<?xml") && response.body.bcontains(bytes(string(r1 * r2)))
+	expression: response.status == 200 && response.body_string.contains('"' + string(r1 * r2) + '"')
 expression: r0()
 detail:
 	author: y0y0
@@ -136,7 +133,7 @@ expression: rr0() && rr1()
 
 <Info>这种情况也许不多见，但是是发生过的例子</Info>
 
-这条规则相比之前的那条似乎规则更强，发出的两个随机数在两个不同的请求中，没有交集的存在，很难发生误报。但是此时难得一见的事情发生了，r1和r2的随机值竟然相等，且在请求rr1时，会将请求的文件名称打印在页面中，那么此时恰好匹配到r2，发生了误报的现象
+这条规则相比之前的那条似乎规则更强，发出的两个随机数在两个不同的请求中，没有交集的存在，很难发生误报。但是此时难得一见的事情发生了，r1和r2的随机值竟然相等，且在请求r1时，会将请求的文件名称打印在页面中，那么此时恰好匹配到r2，发生了误报的现象
 
 那么，对于这种情况，这里要求在使用同一个随机函数时，不同变量的随机范围一定要完全不同，相互之间不存在交集
 
