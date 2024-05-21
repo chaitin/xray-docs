@@ -70,7 +70,11 @@ header中的内容并没有过多要求，但是对于现阶段的yaml poc，我
 
 那么反过来考虑，当页面内有我们想要的内容时，我们能不能把它作为一个expression来进行匹配呢？答案是肯定的
 
-所以，这里我们做出`规定`，当使用output进行内容匹配时，一定要把search中的内容作为一个匹配内容写在对应rule的expression中，尽可能地作为指纹来降低误报率以及减少发包量。这里给出例子进行解释
+所以，这里我们做出`规定`，当使用output进行内容匹配时，一定要把search中的内容作为一个匹配内容写在对应rule的expression中，尽可能地作为指纹来降低误报率以及减少发包量。
+
+**且为了降低开销，在expression中匹配时，就不要再使用match，submatch，等的正则函数，只使用contains匹配一下关键词即可，因为正则的开销要比contains大得多**
+
+这里给出例子进行解释
 
 ```yaml
 name: poc-yaml-wanhuoa-upload-rce
@@ -89,7 +93,7 @@ rules:
 			headers:
 			    Content-Type: multipart/form-data; boundary=b0d829daa06c13d6b3e16b0ad21d1eed
 			body: "<file content>"
-		expression: response.status == 200 && response.body.bcontains(b"success") && "\"data\":\\d+\\.jsp".bmatches(response.body)
+		expression: response.status == 200 && response.body.bcontains(b"success") && response.body.bcontains(b'data":"')
 		output:
 			search: '"data\":\"(?P<filename>\\d+).jsp".bsubmatch(response.body)'
 			uploadfilename: search["filename"]
