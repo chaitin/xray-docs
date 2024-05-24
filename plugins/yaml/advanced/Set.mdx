@@ -20,17 +20,17 @@ description: 'Set的作用只为定义变量，在set中我们能对变量进行
 
 ```yaml
 set:
-	n1: randomLowercase(4)
+    n1: randomLowercase(4)
 ...
 rules:
-	r1:
-		request:
-			cache: true
-			method: GET
-			path: /xxx/yyy/{{n1}}.txt
-			follow_redirects: false
-		expression: response.status == 200 && response.body.bcontains(bytes(string(n1)))
-	...
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /xxx/yyy/{{n1}}.txt
+            follow_redirects: false
+        expression: response.status == 200 && response.body.bcontains(bytes(string(n1)))
+    ...
 expression: r1()
 ```
 
@@ -44,16 +44,16 @@ expression: r1()
 
 ```yaml
 set:
-	r1: randomInt(800000000, 1000000000)
-	r2: randomInt(800000000, 1000000000)
+    r1: randomInt(800000000, 1000000000)
+    r2: randomInt(800000000, 1000000000)
 rules:
-	r0:
-		request:
-			cache: true
-			method: GET
-			path: /xxx&x509type=%27%0Aexpr%20{{r1}}%20-%20{{r2}}%0A%27
-			follow_redirects: false
-		expression: response.status == 200 && response.body.bcontains(bytes(string(r1 - r2)))
+    r0:
+        request:
+            cache: true
+            method: GET
+            path: /xxx&x509type=%27%0Aexpr%20{{r1}}%20-%20{{r2}}%0A%27
+            follow_redirects: false
+        expression: response.status == 200 && response.body.bcontains(bytes(string(r1 - r2)))
 ```
 
 看上去没有问题，既使用了随机变量，又将变量相减后再进行判断。但是如果r1和r2范围相近，这条表达式的通用性就会急速上升，基本只要页面内存在这个小数字，就能够成功完成匹配
@@ -83,51 +83,51 @@ rules:
 name: poc-yaml-test-test
 transport: http
 set:
-	r1: randomInt(1000, 3000)
-	r2: randomInt(10000, 30000)
+    r1: randomInt(1000, 3000)
+    r2: randomInt(10000, 30000)
 rules:
 r0:
-	request:
-		method: POST
-		path: /aaa.jsp
-		headers:
-		Content-Type: application/x-www-form-urlencoded
-		body: cmd={{r1}}*{{r2}};
-	expression: response.status == 200 && response.body_string.contains('"' + string(r1 * r2) + '"')
+    request:
+        method: POST
+        path: /aaa.jsp
+        headers:
+        Content-Type: application/x-www-form-urlencoded
+        body: cmd={{r1}}*{{r2}};
+    expression: response.status == 200 && response.body_string.contains('"' + string(r1 * r2) + '"')
 expression: r0()
 detail:
-	author: y0y0
-	links:
-		- http://example.com
+    author: y0y0
+    links:
+        - http://example.com
 ```
 
 ### 恰好相同的随机变量(int/string)
 
 ```yaml
 set:
-	r1: randomInt(800000000, 1000000000)
-	r2: randomInt(800000000, 1000000000)
+    r1: randomInt(800000000, 1000000000)
+    r2: randomInt(800000000, 1000000000)
 rules:
-	rr0:
-		request:
-			method: POST
-			path: /{{r1}}.txt
-			header:
-				Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rBoundary}}
-			body: >-
-				------WebKitFormBoundary{{rBoundary}}
-				Content-Disposition: form-data; name="myFile"; filename="test.jpg"
+    rr0:
+        request:
+            method: POST
+            path: /{{r1}}.txt
+            header:
+                Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rBoundary}}
+            body: >-
+                ------WebKitFormBoundary{{rBoundary}}
+                Content-Disposition: form-data; name="myFile"; filename="test.jpg"
 
-				<% out.println(\"{{r2}}\"); new java.io.File(application.getRealPath(request.getServletPath())).delete();%>
-				------WebKitFormBoundary{{rBoundary}}--
-		expression: true
-	rr1:
-		request:
-			cache: true
-			method: GET
-			path: /{{r1}}.txt
-			follow_redirects: false
-		expression: response.status == 200 && response.body.bcontains(bytes(string(r2)))
+                <% out.println(\"{{r2}}\"); new java.io.File(application.getRealPath(request.getServletPath())).delete();%>
+                ------WebKitFormBoundary{{rBoundary}}--
+        expression: true
+    rr1:
+        request:
+            cache: true
+            method: GET
+            path: /{{r1}}.txt
+            follow_redirects: false
+        expression: response.status == 200 && response.body.bcontains(bytes(string(r2)))
 expression: rr0() && rr1()
 ```
 

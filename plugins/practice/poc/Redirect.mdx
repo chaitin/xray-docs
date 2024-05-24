@@ -54,12 +54,12 @@ rules:
 
 ```yaml
 r0:
-	request:
-		cache: true
-		method: GET
-		path: /new/newhttp:/interact.sh?
-		follow_redirects: false
-	expression: response.status == 302 && response.headers["location"] == "http:/interact.sh?" && response.body.bcontains(b"http:/interact.sh?\">Found</a>.")
+    request:
+        cache: true
+        method: GET
+        path: /new/newhttp:/interact.sh?
+        follow_redirects: false
+    expression: response.status == 302 && response.headers["location"] == "http:/interact.sh?" && response.body.bcontains(b"http:/interact.sh?\">Found</a>.")
 ```
 
 ### 为什么不能使用contains去匹配

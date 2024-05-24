@@ -24,36 +24,36 @@ web服务的访问路径会因为对应的安装路径以及系统特性而有�
 ```yaml
 # target: http://example.com:8080/test/test
 rules:
-	r0:
-		request:
-			cache: true
-			method: GET
-			# target: http://example.com:8080/test/a
-			path: /a
-		expression: "true"
-		output:
-			r0Url: request.url.path
-	r1:
-		request:
-			cache: true
-			method: GET
-			# target: http://example.com:8080/test/test/b
-			path: '^{{inputPath}}/b'
-		expression: "true"
-	r2:
-		request:
-			cache: true
-			method: GET
-			# target: http://example.com:8080/c
-			path: ^/c
-		expression: "true"
-	r3:
-		request:
-			cache: true
-			method: GET
-			# target: http://example.com:8080/test/a/d
-			path: '^{{r0Url}}/d'
-		expression: "true"
+    r0:
+        request:
+            cache: true
+            method: GET
+            # target: http://example.com:8080/test/a
+            path: /a
+        expression: "true"
+        output:
+            r0Url: request.url.path
+    r1:
+        request:
+            cache: true
+            method: GET
+            # target: http://example.com:8080/test/test/b
+            path: '^{{inputPath}}/b'
+        expression: "true"
+    r2:
+        request:
+            cache: true
+            method: GET
+            # target: http://example.com:8080/c
+            path: ^/c
+        expression: "true"
+    r3:
+        request:
+            cache: true
+            method: GET
+            # target: http://example.com:8080/test/a/d
+            path: '^{{r0Url}}/d'
+        expression: "true"
 ```
 
 所以无论是在日常的审核中或者是poc的编写中，我们都要全面分析当前使用的方式是不是能满足覆盖绝大多数中的情况
@@ -81,33 +81,33 @@ name: poc-yaml-wanhuoa-upload-rce
 manual: true
 transport: http
 set:
-	rfilename: randomLowercase(4)
-	r2: randomInt(40000, 44800)
-	r3: randomInt(40000, 44800)
+    rfilename: randomLowercase(4)
+    r2: randomInt(40000, 44800)
+    r3: randomInt(40000, 44800)
 rules:
-	r11:
-		request:
-			cache: true
-			method: POST
-			path: /xxx/controller
-			headers:
-			    Content-Type: multipart/form-data; boundary=b0d829daa06c13d6b3e16b0ad21d1eed
-			body: "<file content>"
-		expression: response.status == 200 && response.body.bcontains(b"success") && response.body.bcontains(b'data":"')
-		output:
-			search: '"data\":\"(?P<filename>\\d+).jsp".bsubmatch(response.body)'
-			uploadfilename: search["filename"]
-	r22:
-		request:
-			cache: true
-			method: GET
-			path: /aaa/{{uploadfilename}}.jsp
-		expression: response.status == 200 && response.body.bcontains(bytes(string(r2 * r3)))
+    r11:
+        request:
+            cache: true
+            method: POST
+            path: /xxx/controller
+            headers:
+                Content-Type: multipart/form-data; boundary=b0d829daa06c13d6b3e16b0ad21d1eed
+            body: "<file content>"
+        expression: response.status == 200 && response.body.bcontains(b"success") && response.body.bcontains(b'data":"')
+        output:
+            search: '"data\":\"(?P<filename>\\d+).jsp".bsubmatch(response.body)'
+            uploadfilename: search["filename"]
+    r22:
+        request:
+            cache: true
+            method: GET
+            path: /aaa/{{uploadfilename}}.jsp
+        expression: response.status == 200 && response.body.bcontains(bytes(string(r2 * r3)))
 expression: r11() && r22()
 detail:
-	author: chaitin
-	links:
-		- http://example.com
+    author: chaitin
+    links:
+        - http://example.com
 ```
 
 <Warning>同时在编写search相关内容时，一定要注意引号的转义问题，保证整体的正常运行</Warning>

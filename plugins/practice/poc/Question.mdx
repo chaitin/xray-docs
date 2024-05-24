@@ -80,19 +80,19 @@ title: '常见问题'
 name: poc-yaml-test-test
 transport: http
 rules:
-	r0:
-		request:
-			method: GET
-			path: /aaa.aspx?PicID=0
-			follow_redirects: false
-		expression: >-
-			response.status == 200 && response.body.bcontains(b'ioffice.js') &&
-			(response.body.bcontains(b'ctl00_cntForm_cmdUpFile') ||
-			response.body.bcontains(b'ctl00$cntForm$cmdUpFile') ||
-			response.body.bcontains(b'ctl00_cntForm_lblEmpPhotoEx'))
+    r0:
+        request:
+            method: GET
+            path: /aaa.aspx?PicID=0
+            follow_redirects: false
+        expression: >-
+            response.status == 200 && response.body.bcontains(b'ioffice.js') &&
+            (response.body.bcontains(b'ctl00_cntForm_cmdUpFile') ||
+            response.body.bcontains(b'ctl00$cntForm$cmdUpFile') ||
+            response.body.bcontains(b'ctl00_cntForm_lblEmpPhotoEx'))
 expression: r0()
 detail:
-	author: chaitin
+    author: chaitin
 ```
 
 例如这个poc的内容就符合上述内容中情况3，也就是有有利用方式，但是能够使用非常明显的特征去进行匹配。而且后边所匹配的cntForm等内容覆盖了现有框架内能出现的所有情况，同时这些内容也是只有漏洞版本所会出现的
