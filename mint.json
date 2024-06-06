@@ -183,7 +183,8 @@
           "group": "Fingerprint",
           "pages": [
             "plugins/practice/finger/Template",
-            "plugins/practice/finger/Practice"
+            "plugins/practice/finger/Practice",
+            "plugins/practice/finger/VersionPractice"
           ]
         }
       ]
