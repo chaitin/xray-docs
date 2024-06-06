@@ -1,0 +1,116 @@
+---
+title: '版本指纹最佳实践'
+description: '本文将展示版本指纹的最佳编写实践、规范和示例模版'
+---
+
+## 相关定义
+
+### 版本变量名
+在xray中，我们约定版本变量名为: version，以下是一个包含版本指纹的示例模版
+
+
+## 示例模版1
+```yaml
+name: chaitin-xray
+transport: http
+
+detail:
+  fingerprint:
+    cpe: cpe:2.3:a:chaitin:xray
+    version: '{{version}}'
+
+rules:
+  get_icon_hash:
+    request:
+      method: GET
+      path: /
+      follow_redirects: false
+    expression: faviconHash(response.getIconContent()) == 938617678
+  get_version:
+    request:
+      method: POST
+      path: /api/graphql/
+      headers:
+        Content-Type: application/json
+      body: |-
+        {"query":"query WebVersion {webVersion}"}
+    expression: response.body_string.contains("webVersion")
+    output:
+      search: |
+        r'"webVersion":"(?P<version>[\w\.\-]+)"'.submatch(response.body_string)
+      version: search['version']
+
+expression: get_icon_hash() && (get_version() || true)
+
+```
+以下是对示例模版1内容的说明：
+首先我们在detail中声明了此yaml用到了fingerprint中的cpe和version字段，用来在命中指纹时输出产品CPE和版本信息。version字段的值是模版渲染的{{version}}, 
+它的值来源于get_version这条rule中正则提取的版本变量version。
+
+
+## 编写规范
+版本指纹的编写规范和产品指纹的编写规范基本一致，可参考：[指纹编写规范](https://docs.xray.cool/plugins/practice/finger/Practice#prepare-a-specification)，有一点需要额外注意的是 版本检测规则尽量不要影响到产品检测规则的效果，
+具体的写法可以参考示例模版1中：expression: r1() && (r2() || true) 类似这样的写法
+
+## 最佳实践
+在提取版本号时通常会用到正则表达式相关的两个函数submatch或bsubmatch，具体函数定义和示例用法可参考：[regex](https://docs.xray.cool/plugins/yaml/YAMLTypeFunc#regex)
+在测试正则语句提取目标字符串时推荐在：[regex101](https://regex101.com/) 这个在线网站上选择FLAVOR为Golang进行测试。
+
+以下是另外两个可供参考的示例模版
+## 示例模版2
+```
+name: e-business_suite
+transport: http
+detail:
+  fingerprint:
+    cpe: oracle:e-business_suite
+    version: '{{version}}'
+rules:
+  index_contains:
+    expression: response.body_string.contains('E-Business Suite Home Page Redirect')
+  v0:
+    request:
+      method: GET
+      path: /OA_HTML/SNO_version.txt
+    expression: response.body_string.contains('FULL=')
+    output:
+      search: |
+        'FULL=(?P<version>[0-9\\.]+)'.submatch(response.body_string)
+      version: search['version']
+  v1:
+    request:
+      method: GET
+      path: /OA_HTML/login.js
+    expression: |
+      "(?i)Version (?P<version>[\\w\\.]+)".matches(response.body_string)
+    output:
+      search: |
+        "(?i)Version (?P<version>[\\w\\.]+)".submatch(response.body_string)
+      version: search['version']
+expression: index_contains() && (v0() || v1() || true)
+```
+
+## 示例模版3
+
+```
+name: vbulletin
+transport: http
+detail:
+  fingerprint:
+    cpe: vbulletin:vbulletin
+    version: '{{version}}'
+rules:
+  kw_in_body:
+    request:
+      cache: true
+      method: GET
+      path: /
+    expression: |-
+      response.body_string.contains('content="vBulletin') ||
+      response.body_string.contains("Powered by vBulletin") ||
+      response.body_string.contains("vbulletin_css") && response.body_string.contains("vbulletin_md5")
+    output:
+      search: |-
+        'content="vBulletin (?P<version>[0-9\\.]+)'.submatch(response.body_string)
+expression: kw_in_body()
+```
