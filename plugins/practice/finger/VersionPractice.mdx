@@ -4,12 +4,12 @@ description: '本文将展示版本指纹的最佳编写实践、规范和示例
 ---
 
 ## 相关定义
-
 ### 版本变量名
+
 在xray中，我们约定版本变量名为: version，以下是一个包含版本指纹的示例模版
 
-
 ## 示例模版1
+
 ```yaml
 name: chaitin-xray
 transport: http
@@ -41,14 +41,14 @@ rules:
       version: search['version']
 
 expression: get_icon_hash() && (get_version() || true)
-
 ```
+
 以下是对示例模版1内容的说明：
-首先我们在detail中声明了此yaml用到了fingerprint中的cpe和version字段，用来在命中指纹时输出产品CPE和版本信息。version字段的值是模版渲染的{{version}}, 
+首先我们在detail中声明了此yaml用到了fingerprint中的cpe和version字段，用来在命中指纹时输出产品CPE和版本信息。version字段的值是模版渲染的`{{version}}`,
 它的值来源于get_version这条rule中正则提取的版本变量version。
 
-
 ## 编写规范
+
 版本指纹的编写规范和产品指纹的编写规范基本一致，可参考：[指纹编写规范](https://docs.xray.cool/plugins/practice/finger/Practice#prepare-a-specification)，
 有一点需要额外注意的是版本检测规则尽量不要影响到产品检测规则的效果，具体的写法可以参考示例模版1中：expression: r1() && (r2() || true) 类似这样的写法。
 
@@ -58,8 +58,10 @@ expression: get_icon_hash() && (get_version() || true)
 在测试正则语句提取目标字符串时推荐在：[regex101](https://regex101.com/) 这个在线网站上选择FLAVOR为Golang进行测试。
 
 以下是另外两个可供参考的示例模版
+
 ## 示例模版2
-```
+
+```yaml
 name: e-business_suite
 transport: http
 detail:
@@ -93,7 +95,7 @@ expression: index_contains() && (v0() || v1() || true)
 
 ## 示例模版3
 
-```
+```yaml
 name: vbulletin
 transport: http
 detail:
