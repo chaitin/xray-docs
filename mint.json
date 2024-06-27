@@ -1,6 +1,7 @@
 {
   "$schema": "https://mintlify.com/schema.json",
   "name": "xray Documentation",
+  "theme": "prism",
   "primaryTab": {
     "name": "介绍"
   },
@@ -80,46 +81,75 @@
     {
       "group": "工具",
       "pages": [
-        "tools/xray/QuickStart",
+        "tools/Introduction",
+        "tools/BasicFunc",
         {
-          "group": "xray",
-          "icon": "starfighter-twin-ion-engine-advanced",
-          "iconType": "regular",
+          "group": "xray 2.0 工具集",
           "pages": [
-            "tools/xray/BasicIntroduction",
-            "tools/xray/QuickStart",
-            "tools/xray/Scanning",
-            "tools/xray/Configuration",
             {
-              "group": "高级用法",
+              "group": "xpoc",
+              "icon": "raygun",
+              "iconType": "duotone",
               "pages": [
-                "tools/xray/advanced/reverse",
-                "tools/xray/advanced/ssrf",
-                "tools/xray/advanced/burp",
-                "tools/xray/advanced/awvs",
-                "tools/xray/advanced/webhook"
+                "tools/xpoc/BasicIntroduction",
+                "tools/xpoc/QuickStart",
+                "tools/xpoc/BasicFunction"
               ]
             },
-            "tools/xray/QA",
-            "tools/xray/VersionComparison",
-            "tools/xray/Feedback"
+            {
+              "group": "xapp",
+              "icon": "fingerprint",
+              "iconType": "duotone",
+              "pages": [
+                "tools/xapp/BasicIntroduction",
+                "tools/xapp/QuickStart",
+                "tools/xapp/Score"
+              ]
+            },
+            {
+              "group": "xlint",
+              "icon": "ruler",
+              "iconType": "duotone",
+              "pages": [
+                "tools/xlint/QuickStart"
+              ]
+            }
           ]
         },
         {
-          "group": "xpoc",
-          "icon": "raygun",
-          "iconType": "duotone",
+          "group": "xray 1.0 工具集",
           "pages": [
-            "tools/xpoc/BasicIntroduction",
-            "tools/xpoc/QuickStart",
-            "tools/xpoc/BasicFunction"
+            {
+              "group": "xray",
+              "icon": "starfighter-twin-ion-engine-advanced",
+              "iconType": "regular",
+              "pages": [
+                "tools/xray/BasicIntroduction",
+                "tools/xray/QuickStart",
+                "tools/xray/Scanning",
+                "tools/xray/Configuration",
+                {
+                  "group": "高级用法",
+                  "pages": [
+                    "tools/xray/advanced/reverse",
+                    "tools/xray/advanced/ssrf",
+                    "tools/xray/advanced/burp",
+                    "tools/xray/advanced/awvs",
+                    "tools/xray/advanced/webhook"
+                  ]
+                },
+                "tools/xray/QA",
+                "tools/xray/VersionComparison",
+                "tools/xray/Feedback"
+              ]
+            },
+            {
+              "group": "rad",
+              "icon": "radiation",
+              "iconType": "duotone",
+              "pages": ["tools/rad/Tutorials"]
+            }
           ]
-        },
-        {
-          "group": "rad",
-          "icon": "radiation",
-          "iconType": "duotone",
-          "pages": ["tools/rad/Tutorials"]
         }
       ]
     },
@@ -217,5 +247,8 @@
     "ga4": {
       "measurementId": "G-TKTG5WLH30"
     }
+  },
+  "seo": {
+    "indexHiddenPages": true
   }
 }

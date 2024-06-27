@@ -1,0 +1,63 @@
+---
+title: 快速开始
+---
+
+xapp 为单文件二进制文件，无依赖，也无需安装，下载后直接使用。
+
+<Warning>请注意，xapp为命令行工具，请不要双击运行，需要在命令行中运行。</Warning>
+
+## 下载地址
+
+### release 下载
+请下载的时候选择最新的版本下载。
+
++ Github: https://github.com/chaitin/xray/releases?q=xapp (国外速度快)
++ CT stack: https://stack.chaitin.com/tool/detail/1 (国内速度快)
+
+xapp 跨平台支持，请下载时选择需要的版本下载。
+
+### 指纹仓库下载
+
++ Github: https://github.com/chaitin/xray-plugins
+
+<Tip>
+    下载好之后，可以使用-r的方式加载指定的插件，或者使用-g加载group中的插件group。
+
+    如果希望不指定指纹，直接默认全都加载，可以将希望全都加载的插件放到~/.xray/xapp/plugins目录下。
+</Tip>
+
+## 扫描
+
+![](/images/tools/xapp/xapp.gif)
+
+<Tip>需要注意的是，xapp只扫描http和https协议，所以填写目标时请务必加上协议。</Tip>
+1. 指定指纹扫描单个目标：
+
+```bash
+xapp -r xxx.yml -t https://www.example.com
+echo https://www.example.com | xapp -r xxx.yml
+```
+
+2. 指定指纹扫描多个目标：
+
+```bash
+xapp -r xxx.yml -t https://www.example.com -t https://www.example2.com
+xapp -r xxx.yml -i targets.txt
+cat targets.txt | xapp -r xxx.yml
+```
+
+3. 指定多个指纹进行扫描：
+
+```bash
+xapp -r xxx.yml -r yyy.yml -t https://www.example.com
+xapp -r "./finger/web/*.yml" -t https://www.example.com
+xapp -r "./finger/**/*.yml" -t https://www.example.com
+```
+
+4. 指定group进行扫描：
+
+```bash
+xapp -g web.list -t https://www.example.com
+```
+
+

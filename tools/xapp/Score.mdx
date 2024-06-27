@@ -1,0 +1,190 @@
+---
+title: 指纹打分
+---
+
+## 介绍
+
+指纹打分工具是基于将高质量插件编写规范进行量化后，对插件的规则的静态分析，然后打分判断插件是否合格的工具。
+
+## 使用方式
+
+### 为单个文件打分
+
+`xapp score -f xxx.yml`
+
+### 为多个文件打分
+
+`xapp score -d ./xxx/`
+
+### 输出结果
+
+可以加上--output参数，将结果输出到文件中，输出的格式为json
+
+<Accordion title="output.json">
+  ```json
+  {
+    "results": {
+      "./finger/fingerprint-yaml-knopflerfish-http-server.yml": {
+        "total_score": 2,
+        "rule_scores": {
+          "r0": {
+            "expression": "2",
+            "score": 2
+          }
+        }
+      },
+      "./poc/finger/fingerprint-yaml-kong.yml": {
+        "total_score": 0,
+        "rule_scores": {
+          "r0": {
+            "expression": "0",
+            "score": 0,
+            "errors": [
+              {
+                "error_message": "\"kong\".matches(response.headers[\"Server\"])",
+                "score": 0
+              }
+            ]
+          }
+        }
+      },
+      "./poc/finger/fingerprint-yaml-宝塔-BT.cn.yml": {
+        "total_score": 1,
+        "rule_scores": {
+          "r0": {
+            "expression": "2",
+            "score": 2
+          },
+          "r1": {
+            "expression": "(((2 || 2) || 2) || (2 || 2))",
+            "score": 2
+          },
+          "r2": {
+            "expression": "((2 || 2) || 2)",
+            "score": 2
+          },
+          "r3": {
+            "expression": "((2 || 2) || 1)",
+            "score": 1,
+            "errors": [
+              {
+                "error_message": "\"/login\".bmatches(response.body)",
+                "score": 1
+              }
+            ]
+          },
+          "r4": {
+            "expression": "(2 || 2)",
+            "score": 2
+          },
+          "r5": {
+            "expression": "(2 || 2)",
+            "score": 2
+          },
+          "r6": {
+            "expression": "2",
+            "score": 2
+          }
+        }
+      }
+    },
+    "summary": {
+      "failed": 1,
+      "failedFiles": [
+        "fingerprint-yaml-kong.yml"
+      ],
+      "passed": 1,
+      "passedFiles": [
+        "fingerprint-yaml-knopflerfish-http-server.yml"
+      ],
+      "total": 3,
+      "weak": 1,
+      "weakFiles": [
+        "fingerprint-yaml-宝塔-BT.cn.yml"
+      ]
+    }
+  }
+  ```
+</Accordion>
+
+结构大致为上述内容
+- `results`: 每个文件对应的细节评分结果
+    - `total_score`: 所有rule的评分总和
+    - `rule_scores`: 各个rule的评分详情
+    - `error_message`: 没有合格的规则的具体内容。
+- `summary`: 总体评分结果
+    - `failed`: 不合格文件数
+    - `failedFiles`: 不合格文件名
+    - `passed`: 合格文件数
+    - `passedFiles`: 合格文件名
+    - `weak`: 勉强合格文件数
+    - `weakFiles`: 勉强合格文件名
+    - `total`: 总文件数
+
+## 基本概念
+
+打分分为三种：
+
+- 合格：2分
+  - 规则符合高质量规范，可以作为一个rule的expression进行单独使用
+- 勉强合格：1分
+  - 规则较弱，不建议作为一个rule的expression进行单独使用
+- 不合格：0分
+  - 规则弱，不能作为一个rule的expression进行单独使用
+- **组合逻辑**：
+    - `&&`：根据下表评分
+        - 0 && 1  -> 1（勉强合格）
+        - 0 && 2  -> 2（合格）
+        - 1 && 1  -> 2（合格）
+        - 1 && 2  -> 2（合格）
+        - 2 && 2  -> 2（合格）
+    - `||`：根据下表评分
+        - 0 || 1  -> 0（不合格）
+        - 0 || 2  -> 0（不合格）
+        - 1 || 1  -> 1（勉强合格）
+        - 1 || 2  -> 1（勉强合格）
+        - 2 || 2  -> 2（合格）
+
+理论上再复杂的规则，也能化简为上述的组合逻辑中的一种，因此可以方便进行评分。
+
+由组合逻辑可知，并不是不能写不合格规则，而是不能单独使用，必须配合其他合格规则一起使用。
+
+## 总体思路
+
+1. **独立规则评分**：对每个rule中的expression进行评分。
+2. **整体规则评分**：基于各个rule的评分，结合总的expression中的逻辑关系进行整体评分。
+
+## 规则
+
+### 1. 独立规则评分
+- **天生合格的规则**：
+    - `faviconHash`, `versionIn`, `versionLess`, `versionGreater`, `versionEqual`, `md5(response.body_string)`, `mmh3(xxxxx)`
+    - 评分：2（合格）
+
+- **天生勉强合格的规则**：
+    - `isValidPage`, `wait`, `in`, `size(response.body) == 0`, `size(response.body_string) == 0`, `startsWith`, `bstartsWith`, `endsWith`
+    - 评分：1（勉强合格）
+
+- **天生不合格的规则**：
+    - `sleep`, `size(xxx) == 123`, `true`, `!xxxxx`
+    - 评分：0（不合格）
+
+- **需要根据内容判断的规则**：
+    - `contains`, `bcontains`, `icontains`, `ibcontains`, `matches`, `bmatches`, `bsubmatch`, `submatch`
+    - 若包含黑名单中的关键词：0（不合格）
+    - 若包含黑名单中的关键词，但有其他附加内容：1（勉强合格）
+    - 不包含黑名单中的关键词：2（合格）
+
+### 2. 特殊规则评分
+- `response.status`:
+    - 值为200, 301, 302, 401, 403, 404, 500, 502：0（不合格）
+    - 其他值：1（勉强合格）
+
+### 黑名单列表
+- `"script", "style", "title",
+  "header", "footer", "section", "article",
+  "input", "button", "login",
+  "register", "submit", "search", "password", "passwd", "uname", "email", "about",
+  "contact", "terms", "privacy", "cookie", "navbar", "banner", "slider", "dropdown",
+  "content"`
+- 纯字母小于5位或纯数字小于7位

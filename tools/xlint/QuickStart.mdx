@@ -1,0 +1,36 @@
+---
+title: 快速开始
+---
+
+xlint 为单文件二进制文件，无依赖，也无需安装，下载后直接使用。
+
+<Warning>请注意，xlint为命令行工具，请不要双击运行，需要在命令行中运行。</Warning>
+
+## 下载地址
+
+### release 下载
+
+请下载的时候选择最新的版本下载。
+
++ Github: https://github.com/chaitin/xray-plugins/releases
+
+xlint 跨平台支持，请下载时选择需要的版本下载。
+
+## 使用
+
+![](/images/tools/xlint/lint.gif)
+
+1. lint 单个文件
+
+ - `./xlint -f xxx.yml`
+
+2. lint 多个文件
+
+ - `./xlint -f xxx.yml -f yyy.yml`
+ - `./xlint -f ./finger/*.yml`
+ - `./xlint -f "./finger/**/*.yml"`
+
+3. 指定lint某一些规则
+
+ - `./xlint -f xxx.yml -r celcheck`
+ - `./xlint -f xxx.yml -r celcheck -r schemacheck`
