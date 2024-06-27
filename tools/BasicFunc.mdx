@@ -1,0 +1,158 @@
+---
+title: xray 2.0 系列通用参数
+---
+
+## 简介（introduction）
+
+因为xray 2.0系列工具使用的是统一的引擎，所以很多通用函数都可以直接使用，这里将介绍一些常用的通用函数。
+
+## 通用参数（Common parameters）
+
+### run
+
+|命令简称|接收参数|解释|
+|------|-------|---|
+|`-r`|`filepath`|仅执行：仅执行指定的插件，支持glob/绝对路径/相对路径|
+
+#### demo
+
+```bash
+xapp -r xxx.yml -t http://192.168.1.1:8000
+xapp -r xxx.yml -r yyy.yml -t http://192.168.1.1:8000
+xapp -r "/path/*.yml"  -t http://192.168.1.1:8000
+xapp.exe -r /path/*.yml  -t http://192.168.1.1:8000
+```
+
+### group
+
+|命令简称|接收参数|解释|
+|------|-------|---|
+|`-g`|`filepath`|插件组：执行指定的插件组文件|
+
+#### demo
+
+```bash
+xapp -g xxx.list -t http://192.168.1.1:8000
+xapp -g xxx.list -g yyy.list -t http://192.168.1.1:8000
+```
+
+### disable
+
+|命令简称|接收参数|解释|
+|------|-------|---|
+|`-d`|`plugin_name`|禁用：禁止特定插件执行，仅支持输入插件名，也就是插件的`name`字段|
+
+#### demo
+
+```bash
+xapp -g test.list -d fingerprint-yaml-Azure -t http://192.168.1.1:8000
+```
+
+### config
+
+|命令全称|接收参数|解释|
+|-------|-------|---|
+|`--config`|`filepath`|配置文件：使用指定的配置文件，如果文件不存在则自动创建默认配置文件|
+
+## HTTP客户端管理（HTTP Client Management）
+
+### host_rps
+
+|命令简称|接收参数|解释|
+|------|-------|---|
+|`--hrps`|`int`|对于单个Host的每秒最大发送请求数: 小于等于0时不限制每秒最大发送请求数 (default: 0)|
+
+### http-proxy
+
+|命令全称|接收参数|解释|
+|------|-------|---|
+|`--http-proxy`|`代理地址`|HTTP客户端代理，仅对http连接生效|
+
+#### format
+
+`[http|https|socks5://][username[:password]@]host[:port]`
+
+### retry
+
+|命令全称|接收参数|解释|
+|------|-------|---|
+|`--retry`|`int`|请求失败重试次数 (default: 2)|
+
+## 连接管理（Connection management）
+
+### proxy
+
+|命令全称|接收参数|解释|
+|------|-------|---|
+|`--proxy`|`代理地址`|全局代理，仅支持socks5，对所有连接生效|
+
+#### format
+
+`socks5://[username[:password]@]host[:port]`
+
+### timeout
+
+|命令全称|接收参数|解释|
+|------|-------|---|
+|`--timeout`|`int`|读超时: 从连接中读取数据的最大耗时 (default: 5s)|
+
+## 插件展示（Plugin Showcase）
+
+### view
+
+|命令全称|接收参数|解释|
+|------|-------|---|
+|`-v`||列出启用的插件 (default: false)|
+
+## 目标拆解（Target disassembly）
+
+### input
+
+|命令全称|接收参数|解释|
+|------|-------|---|
+|`-i`|`filepath`|目标文件: 指定含有扫描目标的文本文件|
+
+### target
+
+|命令全称|接收参数|解释|
+|------|-------|---|
+|`-t`|`value`|扫描目标: 可以为URL/IP/域名/Host:Port等多种形式的混合输入 （默认）|
+
+#### demo
+
+```bash
+xapp -g test.list -t http://192.168.1.1:8000
+echo https://xray.cool | xapp -g test.list
+```
+
+## 结果输出（Result Output）
+
+### output
+
+|命令全称|接收参数|解释|
+|------|-------|---|
+|`-o`|`filepath`|结果输出: 指定保存结果的文件路径|
+
+目前支持的结果输出格式有：
+- xpoc：html，json
+- xapp：json
+
+## 日志管理（Log Management）
+
+### debug
+
+|命令全称|接收参数|解释|
+|------|-------|---|
+|`--debug`||调试：打印debug日志 (default: false)|
+
+### log-level
+
+|命令全称|接收参数|解释|
+|------|-------|---|
+|`--log-level`||指定等级：debug/info(默认)/warn/error/fatal/disable|
+
+### silent
+
+|命令全称|接收参数|解释|
+|------|-------|---|
+|`--silent`||静默：不打印banner，日志等级设置为fatal (default: false)|
