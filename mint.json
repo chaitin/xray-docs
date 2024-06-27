@@ -1,7 +1,6 @@
 {
   "$schema": "https://mintlify.com/schema.json",
   "name": "xray Documentation",
-  "theme": "prism",
   "primaryTab": {
     "name": "介绍"
   },
@@ -247,8 +246,5 @@
     "ga4": {
       "measurementId": "G-TKTG5WLH30"
     }
-  },
-  "seo": {
-    "indexHiddenPages": true
   }
 }
