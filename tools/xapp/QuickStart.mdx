@@ -31,6 +31,64 @@ xapp 跨平台支持，请下载时选择需要的版本下载。
 ![](/images/tools/xapp/xapp.gif)
 
 <Tip>需要注意的是，xapp只扫描http和https协议，所以填写目标时请务必加上协议。</Tip>
+
+### 加载方式
+
+1. 运行时指定运行部分指纹
+
+直接在命令行中指定-r参数，加载指定的指纹即可，具体参考下述例子
+
+2. 运行时不指定指纹，加载~/.xray/xapp/plugins目录下所有指纹
+
+下载[指纹仓库](https://github.com/chaitin/xray-plugins)或者将自己编写的指纹放到该目录下，运行时不指定-r参数，xapp会自动加载该目录下所有指纹。
+
+<Warning>请将具体的文件放到这个目录下，不要将整个指纹仓库放到这个目录下</Warning>
+
+3. 运行时指定一个规则文件，加载该规则文件中的所有指纹
+
+文件编写方式可以参考[group.list](./group)或者[运行策略组](https://github.com/chaitin/xray-plugins/tree/main/group)的内容
+
+然后使用`-g`就可以运行
+
+4. 将规则文件变成一个命令，运行时直接使用命令加载指纹
+
+<Info>尝鲜功能，可能存在一些bug</Info>
+
+```yaml xapp-config.yaml
+xapp: &xapp
+  concurrent: 100
+  workflow:
+    - name: scan
+      base:
+        - util-target-split
+        - util-get-env
+        - detect-url
+        - detect-website
+        - list-enable
+        - fingerprint
+        - util-reminder
+      output: [ "event.website" ]
+    - name: output
+      base:
+        - util-result-printer
+      input: [ "event.website" ]
+
+strategies:
+  - <<: *xapp
+    name: l1
+    description: 我的自定义命令
+    path:
+      - g:///root/xray-plugins/group/test.list
+```
+
+请将上述内容复制到xapp-config.yaml文件中，然后运行，即可在help中看到自定义的命令：
+
+![](/images/tools/xapp/img.png)
+
+运行：`xapp l1 -t https://xray.cool` 将等价于运行 `xapp -g /root/xray-plugins/group/test.list -t https://xray.cool`
+
+### 扫描方式
+
 1. 指定指纹扫描单个目标：
 
 ```bash
