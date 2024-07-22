@@ -12,7 +12,7 @@ title: 'URL重定向'
 
 在Redirect此类的漏洞中，如果目标站点无特殊情况（例如访问后状态码确实不属于300~400的范围），那么首先就要要求request中的follow_redirects选项一定要手动写成false
 
-<Info>默认情况下，request中的follow_redirects选项为true，那么就会导致发生跳转时获取的response是最终跳转页面中的内容</Info>
+<Info>默认情况下，request中如果method为GET或者HEAD的情况下，follow_redirects选项为true，其他情况下的follow_redirects选项为false，那么就会导致发生跳转时获取的response是最终跳转页面中的内容</Info>
 
 ```yaml
 rules:

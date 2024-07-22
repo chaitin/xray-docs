@@ -15,7 +15,7 @@ description: '该文档会简单介绍所有的数据类型以及支持的函数
 | `body` | `string` | 定义请求体 | 全版本 |
 | `follow_redirects` | `bool` | 定义请求是否跟随跳转 | 全版本 |
 | `read_timeout` | `string` | 定义当前请求的超时时间 | 全版本 |
-| `no_cookie` | `bool` | 定义当前请求是否继承之前请求的cookie | xpoc > 0.0.8 |
+| `no_cookie` | `bool` | 定义当前请求是否继承之前请求的cookie | xpoc ≥ 0.1.0；xapp ≥ 0.0.2 |
 
 ## 类型（Type）
 xray 支持所有CEL文档中的类型，同时还注入了几种特殊的类型，包含：
@@ -140,7 +140,6 @@ reverseType 类型包含字段如下, 设变量名为 `reverse`（需要先使�
 | `reverse.ip`                    | `string`                  | 反连平台的 ip 地址                   | xray ≥ 1.8.4 |
 | `reverse.is_domain_name_server` | `bool`                    | 反连平台的 domain 是否同时是 nameserver | xray ≥ 1.8.4 |
 | `reverse.wait(timeout)`         | `func (timeout int) bool` | 等待 timeout 秒，并返回是否在改时间内获得了信息  | xray ≥ 1.8.4 |
-| `reverse.request()`             | `func (CelReverse) string` | 返回反连平台接收到的请求  | xpoc > 0.0.8 |
 
 > 参数详情介绍：[🔎详情](/plugins/yaml/TypeFunc/exampleType/reverse)
 
@@ -204,7 +203,7 @@ xray 支持所有 CEL 文档中的函数，同时还新增了一些函数支持�
 | `upper`        | `func upper(s1 string) string`                           | 将 string 中的小写字母转换成大写                                              | xray ≥ 1.9.3 | [🔎](/plugins/yaml/TypeFunc/example/string/upper)                                                         |
 | `rev`          | `func rev(s1 string) string`                             | 将 string 反向输出，主要用于验证命令执行                                          | xray ≥ 1.9.3 | [🔎](/plugins/yaml/TypeFunc/example/string/rev)                                                           |
 | `size`         | `func size(s1 string) int`                               | 返回 string 的长度                                                     | 全版本          | [🔎](https://github.com/google/cel-spec/blob/master/tests/simple/testdata/string.textproto#L3)  |
-|`format`        | `func (data string) format(align int, align_data string, prefix string, step int) string` |`format`函数主要用于格式化字符串，可以通过指定的对齐字符、前缀以及步进参数来调整字符串的显示样式| xpoc > 0.0.8 | [🔎](/plugins/yaml/TypeFunc/example/string/format) |
+| `format`       | `func (data string) format(align int, align_data string, prefix string, step int) string` |`format`函数主要用于格式化字符串，可以通过指定的对齐字符、前缀以及步进参数来调整字符串的显示样式| xpoc ≥ 0.1.0；<br />xapp ≥ 0.0.2 | [🔎](/plugins/yaml/TypeFunc/example/string/format) |
 
 ### []byte 处理
 
@@ -214,7 +213,7 @@ xray 支持所有 CEL 文档中的函数，同时还新增了一些函数支持�
 | `ibcontains`  | `func (b1 bytes) ibcontains(b2 bytes) bool`             | 判断 b1 是否包含 b2，返回 bool 类型结果, 与 contains 不同的是，ibcontains 是字节流（bytes）的查找, 且忽略大小写 | xray ≥ 1.8.4 | [🔎](/plugins/yaml/TypeFunc/example/bytes/ibcontains)                                                     |
 | `bstartsWith` | `func (b1 bytes) bstartsWith(b2 bytes) bool`            | 判断一个 b1 是否由 b2 开头，返回 bool 类型结果。与 startsWith 不同的是，bcontains 是字节流（bytes）的查找     | xray ≥ 1.8.4 | [🔎](/plugins/yaml/TypeFunc/example/bytes/bstartWith)                                                     |
 | `bformat`     | `func (b1 bytes) bformat(int, int, string, int) string` | 将 bytes 进行进制转换编码，可以根据输入的参数转换成对应的进制编码，并可以自定义转换格式                               | xray ≥ 1.8.5 | [🔎](/plugins/yaml/TypeFunc/example/bytes/bformat)                                                        |
-| `bload`     | `func bload(data string, base int, align int, prefix string, step int) []byte` | `bload`函数用于将字符串数据按照特定的编码规则转换为字节序列，支持自定义的编码基数、对齐、前缀以及步进参数  | xpoc > 0.0.8 | [🔎](/plugins/yaml/TypeFunc/example/bytes/bload)                                                        |
+| `bload`     | `func bload(data string, base int, align int, prefix string, step int) []byte` | `bload`函数用于将字符串数据按照特定的编码规则转换为字节序列，支持自定义的编码基数、对齐、前缀以及步进参数  | xpoc ≥ 0.1.0；<br />xapp ≥ 0.0.2 | [🔎](/plugins/yaml/TypeFunc/example/bytes/bload)                                                        |
 | `size`        | `func size(b1 bytes) int`                               | 返回 bytes 的长度                                                                  | 全版本          | [🔎](https://github.com/google/cel-spec/blob/master/tests/simple/testdata/string.textproto#L31) |
 
 ### 编码函数（Encoding）
@@ -248,7 +247,8 @@ xray 支持所有 CEL 文档中的函数，同时还新增了一些函数支持�
 | 函数名               | 函数原型                                    | 说明                | 适用版本         | 详情                                                |
 |-------------------|-----------------------------------------|-------------------|--------------|---------------------------------------------------|
 | `randomInt`       | `func randomInt(from, to int) int`      | 两个范围内的随机数         | xray ≥ 1.8.4 | [🔎](/plugins/yaml/TypeFunc/example/random/randomInt)       |
-| `randomLowercase` | `func randomLowercase(n length) string` | 指定长度的小写字母组成的随机字符串 | xray ≥ 1.8.4 | [🔎](/plugins/yaml/TypeFunc/example/random/randomLowercase) |
+| `randomLowercase` | `func randomLowercase(n int) string` | 指定长度的小写字母组成的随机字符串 | xray ≥ 1.8.4 | [🔎](/plugins/yaml/TypeFunc/example/random/randomLowercase) |
+| `uuid`            | `func uuid() string`                     | 生成 uuid 字符串         | xpoc ≥ 0.1.0；<br />xapp ≥ 0.0.2| [🔎](/plugins/yaml/TypeFunc/example/random/uuid)            |
 
 ### 正则（Regex）
 
@@ -294,20 +294,20 @@ xray 支持所有 CEL 文档中的函数，同时还新增了一些函数支持�
 | 函数名              | 函数原型                                        | 说明                                                      | 适用版本          | 详情                                              |
 |------------------|---------------------------------------------|---------------------------------------------------------|---------------|-------------------------------------------------|
 | `zipSlip`        | `func zipSlip(s1 string, b1 bytes) bytes`   | 该函数可以自定义生成一个zip文件                                       | xpoc >= 0.0.8 | [🔎](/plugins/yaml/TypeFunc/example/compress/zipSlip)        |
-| `gzip`        | `func gzip(data string/[]byte) string`   | 该函数可以自定义生成一个zip文件                                       | xpoc > 0.0.8 | [🔎](/plugins/yaml/TypeFunc/example/compress/gzip)        |
+| `gzip`        | `func gzip(data string/[]byte) string`   | 该函数可以对字符串或字节序列数据进行GZIP压缩。                                | xpoc ≥ 0.1.0；<br />xapp ≥ 0.0.2 | [🔎](/plugins/yaml/TypeFunc/example/compress/gzip)        |
 
 ### 进制转换（Base conversion）
 
 | 函数名              | 函数原型                                        | 说明                                                      | 适用版本          | 详情                                              |
 |------------------|---------------------------------------------|---------------------------------------------------------|---------------|-------------------------------------------------|
-|`decToHex`|`func decToHex(n int) string`| 该函数可以将十进制转换为十六进制 | xpoc > 0.0.8 | [🔎](/plugins/yaml/TypeFunc/example/baseConversion/decToHex) |
+|`decToHex`|`func decToHex(n int) string`| 该函数可以将十进制转换为十六进制 | xpoc ≥ 0.1.0；xapp ≥ 0.0.2 | [🔎](/plugins/yaml/TypeFunc/example/baseConversion/decToHex) |
 
 ### 其它（Other）
 
 | 函数名              | 函数原型                                        | 说明                                                      | 适用版本          | 详情                                              |
 |------------------|---------------------------------------------|---------------------------------------------------------|---------------|-------------------------------------------------|
 | `in`             | `string in map`                             | map 中是否包含某个 key                                         | xray ≥ 1.8.4  |                                                 |
-| `icon`/`getIconContent` | `func (r1 response) getIconContent() bytes` | 获取response中的icon的字节流数据，如果只存储了icon的地址，则会自动访问该icon，并返回字节流 | getIconContent[xray ≥ 1.9.3], icon[xpoc > 0.0.8]  | [🔎](/plugins/yaml/TypeFunc/example/other/getIconContent) |
+| `icon`/`getIconContent` | `func (r1 response) getIconContent() bytes` | 获取response中的icon的字节流数据，如果只存储了icon的地址，则会自动访问该icon，并返回字节流 | getIconContent[xray ≥ 1.9.3],<br />icon[xpoc ≥ 0.1.0；xapp ≥ 0.0.2]  | [🔎](/plugins/yaml/TypeFunc/example/other/getIconContent) |
 | `get404Path`     | `func get404Path() string`                  | 获取一个长度为8的随机字符串，当作404页面的路径,并保证在一次扫描中，同一个目标将只有一个404path   | xpoc >= 0.0.1 | [🔎](/plugins/yaml/TypeFunc/example/http/get404path)      |
-| `isValidPage` | `func isValidPage(resp response) bool` | 函数用于验证给定的网页是否有效，通过检查 HTTP 响应的特定特征和与已知404页面的相似度 | xpoc > 0.0.8 | [🔎](/plugins/yaml/TypeFunc/example/other/isValidPage)  |
+| `print`     | `func print(...any) bool`                  | 在调试场景下，使用--debug时，可以将此函数添加到expression中，打印想要的变量的值   | xpoc >= 0.1.0；<br />xapp >= 0.0.2 | [🔎](/plugins/yaml/TypeFunc/example/debug/print)      |
 

@@ -59,6 +59,20 @@ title: xray 2.0 系列通用参数
 |`--log-level`|指定等级：debug/info(默认)/warn/error/fatal/disable||
 |`--silent`|静默：不打印banner，日志等级设置为fatal (default: false)||
 
+## 通用功能（Common Functions）
+
+### 反连优化（Reverse Optimization）
+
+在xray2.0系列工具中，我们优化了反连的功能，当前在没有配置反连的前提下，会默认使用dnslog.cn作为反连的服务器使用。
+
+### 配置文件（Configuration File）
+
+最新版本的xray2.0系列工具都会在其对应的**配置文件夹**处创建一个example文件，同时不会再创建默认配置文件，如果希望修改配置，可以复制example文件并去掉example，修改其中内容即可
+
+<Accordion title="配置文件夹（Configuration Folder）">
+    - Windows：`C:\Users\<用户名>\.xray\xapp`
+    - Linux\MacOS：`~/.xray/xapp`
+</Accordion>
 
 ## Demo
 

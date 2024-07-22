@@ -1,0 +1,39 @@
+---
+title: 'print'
+description: '`print`函数: 方便在调试场景下打印信息'
+---
+
+## 函数说明
+
+新增print函数，支持在脚本所有cel语法位置进行调用，用于插件调试用途
+
+- 仅在命令行增加-debug的情况下打印内容，默认不打印
+- print固定返回true, 便于以&&逻辑嵌入cel中
+- 最大支持传入10个参数
+- 每个参数将以一条日志独立打印
+- `[]byte` 内容会以base64编码进行打印
+
+## 函数原型
+
+`print(...any) bool`
+
+## 举例
+
+```yaml
+expression: print(response.status) && response.status==200
+```
+
+```bash
+[INF] 24-07-18 13:35:25 poc:poc-test: [int64]  200 [gamma.go:162]
+```
+
+结合cel宏使用：
+
+逐行打印response.headers中的每个key value对
+
+```yaml
+expression: |
+      response.headers.all(x,print(x+": "+response.headers[x])) && response.status == 200
+```
+
+![](/images/plugins/yaml/e210697c-2877-444b-bbff-5336dcf06f9b.png)
