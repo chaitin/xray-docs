@@ -37,7 +37,7 @@ rules:
     expression: response.body_string.contains("webVersion")
     output:
       search: |
-        r'"webVersion":"(?P<version>[\w\.\-]+)"'.submatch(response.body_string)
+        r'"webVersion":"(?P<version>[\w\.\-]+?)"'.submatch(response.body_string)
       version: search['version']
 
 expression: get_icon_hash() && (get_version() || true)
@@ -78,17 +78,17 @@ rules:
     expression: response.body_string.contains('FULL=')
     output:
       search: |
-        'FULL=(?P<version>[0-9\\.]+)'.submatch(response.body_string)
+        'FULL=(?P<version>[0-9\\.]+?)'.submatch(response.body_string)
       version: search['version']
   v1:
     request:
       method: GET
       path: /OA_HTML/login.js
     expression: |
-      "(?i)Version (?P<version>[\\w\\.]+)".matches(response.body_string)
+      "(?i)Version (?P<version>[\\w\\.]+?)".matches(response.body_string)
     output:
       search: |
-        "(?i)Version (?P<version>[\\w\\.]+)".submatch(response.body_string)
+        "(?i)Version (?P<version>[\\w\\.]+?)".submatch(response.body_string)
       version: search['version']
 expression: index_contains() && (v0() || v1() || true)
 ```
@@ -114,6 +114,6 @@ rules:
       response.body_string.contains("vbulletin_css") && response.body_string.contains("vbulletin_md5")
     output:
       search: |-
-        'content="vBulletin (?P<version>[0-9\\.]+)'.submatch(response.body_string)
+        'content="vBulletin (?P<version>[0-9\\.]+?)'.submatch(response.body_string)
 expression: kw_in_body()
 ```
