@@ -1,0 +1,31 @@
+---
+title: 'ChangeLog'
+description: 'xlint的更新日志'
+---
+
+## 0.0.2（2024-07-18）
+
+### Change Log
+1. lint中增加对贪婪匹配的正则的限制，不允许使用贪婪匹配
+2. 增加lint结果输出功能
+3. 对最新的函数进行lint支持
+
+## 0.0.1（2024-06-26）
+
+xlint 是一款专门用于对 xray 的 YAML 插件进行格式检测的工具，通过使用该工具可以对脚本进行规范化检测，确保脚本能够正常运行。
+
+- 使用 `-f` 参数可以指定检测一个或多个文件。通过使用多个 `-f` 参数，您还可以指定检测多个文件夹中的文件。例如：
+
+  ```sh
+  xlint -f xxx.yml
+  xlint -f "./finger/*"
+  xlint -f "./finger/*" -f "./poc/*"
+  ```
+- 使用`--rules`可以指定检测某一个规则，默认不写就全部执行
+   - celcheck
+   - schemacheck
+   - payloadcheck
+   - transportcheck
+   - unusedcheck
+
+如果在检测过程中出现问题，您可以前往 [YAML 插件修复手册](https://docs.xray.cool/plugins/yaml/Fix) 进行检查和修复。
