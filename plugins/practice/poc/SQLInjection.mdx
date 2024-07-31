@@ -102,7 +102,7 @@ name: poc-yaml-test-sqli-time-based
 manual: true
 transport: http
 set:
-    randSecond1: randomInt(5, 7)
+    randSecond1: randomInt(5, 8)
     randSecond2: randomInt(2, 4)
 rules:
     r0:
@@ -119,14 +119,16 @@ rules:
             method: GET
             path: /xxx?keyword=%27%2B(select(0)from(select(sleep({{randSecond1}})))v)%2B%27/
             read_timeout: "10"
-        expression: response.latency - undelayedLantency >= randSecond1 * 1000 - 500 && response.status == 200 && response.body.bcontains(b"{\"code\":200")
+        expression: response.latency - undelayedLantency >= randSecond1 * 1000 - 100 && response.status == 200 && response.body.bcontains(b"{\"code\":200")
+        output:
+            undelayedLantency1: response.latency
     r2:
         request:
             cache: false
             method: GET
             path: /xxx?keyword=%27%2B(select(0)from(select(sleep({{randSecond2}})))v)%2B%27/
             read_timeout: "10"
-        expression: response.latency - undelayedLantency >= randSecond2 * 1000 - 500 && response.status == 200 && response.body.bcontains(b"{\"code\":200")
+        expression: response.latency - undelayedLantency >= randSecond2 * 1000 - 100 && response.latency < undelayedLantency1 && response.status == 200 && response.body.bcontains(b"{\"code\":200")
 expression: r0() && r1() && r2()
 detail:
     author: Chaitin
@@ -138,7 +140,7 @@ detail:
 
 同时这里分别说明一下基础的三个请求分别所对应的意义
 - 第一个请求：延时为0，测出访问对应站点时的基础延时
-- 第二个请求：延时一定不为0，且时长定在(5, 7)秒，通过延长一个较长的时间来发现是否发生一个延时，但是这个内容可能收到系统方面相关网络波动的影响分
+- 第二个请求：延时一定不为0，且时长定在(5, 8)秒，通过延长一个较长的时间来发现是否发生一个延时，但是这个内容可能收到系统方面相关网络波动的影响分
 - 第三个请求：延时一定不为0，且时长一定小于第二个请求中的延时，通过一个较短的时间判断这个延时一定是因为sql注入所发生的
 
 那么依据上边所分析出来的内容，我们可以得到以下的要求
@@ -159,7 +161,8 @@ detail:
         - 一定需要对访问时间的差值进行比较，确保两个相似请求之间的时间差异全部是由sleep所造成的
         - 同时无特殊的情况下，`建议`除了时间差值的比较之外，其他的内容与第一条相同
 - 在第三条关于注入的rule中
-    - 这一条的内容与第二条除了时间的取值都相同即可
+    - 时间取值范围变小
+    - 匹配的内容与第二条类似，但要加上判断第二条的延时是否大于第三条的延时，避免误报
 
 <Warning>一定要注意添加read_timeout: "10"，不然扫描器会直接不等响应完就根据默认时间直接结束，同时要注意该漏洞的payload是否会被执行多次，造成等待时间翻倍的情况，如果存在，请自行缩短sleep时长，同时提高read_timeout的值</Warning>
 
